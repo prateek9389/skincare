@@ -31,6 +31,26 @@ export default function Home() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const lenisRef = useRef<Lenis | null>(null);
+  const cartLoadedRef = useRef(false);
+
+  // Sync cart with localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("aura_cart");
+    if (saved) {
+      try {
+        setCartItems(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse cart items", e);
+      }
+    }
+    cartLoadedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (cartLoadedRef.current) {
+      localStorage.setItem("aura_cart", JSON.stringify(cartItems));
+    }
+  }, [cartItems]);
 
   // Track page scroll to animate background SVG path
   const { scrollYProgress } = useScroll();

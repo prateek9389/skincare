@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { PRODUCTS, Product } from "@/data/products";
+import Link from "next/link";
 
 interface ProductGridProps {
   onAddToCart: (product: Product) => void;
@@ -42,7 +43,7 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
   };
 
   return (
-    <section id="products" className="w-full py-16 md:py-24 bg-transparent">
+    <section id="best-sellers" className="w-full py-16 md:py-24 bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header with Animation */}
@@ -57,7 +58,7 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
             Best Sellers
           </h2>
           <a
-            href="#"
+            href="/shop"
             className="group flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-[#1C1B19] uppercase hover:text-[#8C8276] transition-colors"
           >
             View All
@@ -92,7 +93,7 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
               className="flex flex-col bg-white border border-[#EAE3DC]/60 rounded-2xl overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-500 relative"
             >
               {/* Product Image Container (Vertical Editorial Aspect Ratio) */}
-              <div className="w-full aspect-[4/5] bg-[#F5F2EB] relative overflow-hidden">
+              <Link href={`/product/${product.id}`} className="block w-full aspect-[4/5] bg-[#F5F2EB] relative overflow-hidden cursor-pointer">
                 <Image
                   src={product.image}
                   alt={product.name}
@@ -100,17 +101,19 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
                   sizes="(max-w-640px) 100vw, (max-w-1024px) 50vw, 20vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-              </div>
+              </Link>
 
               {/* Product Info */}
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 text-left">
                   <span className="text-[8px] font-bold uppercase tracking-widest text-[#8C8276]">
                     {product.category}
                   </span>
-                  <h3 className="font-serif text-sm font-semibold tracking-wide text-[#1C1B19] group-hover:text-[#BCAE9E] transition-colors line-clamp-1">
-                    {product.name}
-                  </h3>
+                  <Link href={`/product/${product.id}`} className="hover:underline">
+                    <h3 className="font-serif text-sm font-semibold tracking-wide text-[#1C1B19] group-hover:text-[#BCAE9E] transition-colors line-clamp-1">
+                      {product.name}
+                    </h3>
+                  </Link>
                   <p className="text-[11px] text-[#8C8276] leading-relaxed tracking-wide font-light line-clamp-1">
                     {product.description}
                   </p>

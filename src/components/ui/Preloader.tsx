@@ -15,7 +15,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
 
   useEffect(() => {
     let current = 1;
-    const duration = 3000; // Exact 3.0 seconds total tick duration
+    const duration = 5500; // Exact 5.5 seconds total tick duration
     const intervalTime = 30;
     const totalSteps = duration / intervalTime;
     let step = 0;
@@ -54,7 +54,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
           setHasMounted(false);
           onComplete?.();
         }}
-        className="fixed inset-0 bg-[#FBF9F6] z-50 flex flex-col justify-between p-8 sm:p-12 lg:p-16 select-none overflow-hidden"
+        className="fixed inset-0 bg-[#FBF9F6] z-[9999] flex flex-col justify-between p-8 sm:p-12 lg:p-16 select-none overflow-hidden"
       >
         {/* Top Header Row */}
         <div className="flex justify-between items-center w-full z-10">

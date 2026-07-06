@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Product } from "@/data/products";
+import Link from "next/link";
 
 interface CartItem {
   product: Product;
@@ -61,14 +62,14 @@ export default function Header({
           
           {/* Left Menu Items (Desktop) */}
           <nav className="hidden lg:flex items-center space-x-8 text-xs font-semibold tracking-widest text-[#1C1B19] uppercase">
-            <a href="#" className="hover:text-[#BCAE9E] transition-colors">Shop</a>
-            <a href="#" className="hover:text-[#BCAE9E] transition-colors">Best Sellers</a>
-            <a href="#" className="hover:text-[#BCAE9E] transition-colors">Collections</a>
+            <a href="/shop" className="hover:text-[#BCAE9E] transition-colors">Shop</a>
+            <a href="/best-sellers" className="hover:text-[#BCAE9E] transition-colors">Best Sellers</a>
+            <a href="/collections" className="hover:text-[#BCAE9E] transition-colors">Collections</a>
           </nav>
 
           {/* Centered Brand Logo */}
           <div className="flex-1 lg:flex-none text-center lg:text-left">
-            <a href="#" className="inline-block">
+            <a href="/" className="inline-block">
               <h1 className="font-serif text-2xl sm:text-3xl tracking-[0.25em] text-[#1C1B19] uppercase font-light">
                 Aura
               </h1>
@@ -220,12 +221,13 @@ export default function Header({
                     <p>${subtotal.toFixed(2)}</p>
                   </div>
                   <p className="text-[10px] text-[#8C8276] mb-6">Shipping & taxes calculated at checkout.</p>
-                  <button 
-                    onClick={() => alert("Checkout flow simulation!")}
-                    className="w-full bg-[#1C1B19] hover:bg-[#383838] text-[#FBF9F6] py-3.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 transform active:scale-[0.98]"
+                  <Link 
+                    href="/checkout"
+                    onClick={() => setIsCartOpen(false)}
+                    className="w-full text-center block bg-[#1C1B19] hover:bg-[#383838] text-[#FBF9F6] py-3.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 transform active:scale-[0.98]"
                   >
                     Proceed to Checkout
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>

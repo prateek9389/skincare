@@ -23,7 +23,7 @@ export default function CategoryGrid() {
   const marqueeItems = [...categories, ...categories];
 
   return (
-    <section className="w-full py-16 md:py-20 bg-transparent border-b border-[#EAE3DC] overflow-hidden select-none">
+    <section id="collections" className="w-full py-16 md:py-20 bg-transparent border-b border-[#EAE3DC] overflow-hidden select-none">
       
       {/* Section Title */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 text-center sm:text-left">

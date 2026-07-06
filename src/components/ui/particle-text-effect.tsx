@@ -14,8 +14,8 @@ class Particle {
   target: Vector2D = { x: 0, y: 0 };
 
   closeEnoughTarget = 100;
-  maxSpeed = 8.0;
-  maxForce = 0.4;
+  maxSpeed = 4.0;
+  maxForce = 0.08;
   particleSize = 6;
   isKilled = false;
 
@@ -217,10 +217,10 @@ export function ParticleTextEffect({
           particle.pos.x = randomPos.x;
           particle.pos.y = randomPos.y;
 
-          particle.maxSpeed = Math.random() * 6 + 5;
-          particle.maxForce = particle.maxSpeed * 0.055;
-          particle.particleSize = Math.random() * 4 + 4;
-          particle.colorBlendRate = Math.random() * 0.03 + 0.005;
+          particle.maxSpeed = Math.random() * 3 + 2;
+          particle.maxForce = particle.maxSpeed * 0.02;
+          particle.particleSize = Math.random() * 3 + 3;
+          particle.colorBlendRate = Math.random() * 0.01 + 0.005;
 
           particles.push(particle);
         }

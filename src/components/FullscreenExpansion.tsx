@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { PRODUCTS } from "@/data/products";
+import Link from "next/link";
 
 export default function FullscreenExpansion() {
   return (
@@ -39,7 +40,7 @@ export default function FullscreenExpansion() {
                 key={`${product.id}-cabinet-1`}
                 className="w-[180px] sm:w-[220px] bg-neutral-900 rounded-2xl border border-neutral-800 p-4 flex flex-col space-y-4 shrink-0 hover:border-neutral-700 transition-colors duration-300 shadow-xl"
               >
-                <div className="relative aspect-[4/3] bg-neutral-950 rounded-xl overflow-hidden flex items-center justify-center p-2">
+                <Link href={`/product/${product.id}`} className="block relative w-full aspect-[4/3] bg-neutral-950 rounded-xl overflow-hidden p-2 cursor-pointer">
                   <Image
                     src={product.image}
                     alt={product.name}
@@ -47,14 +48,16 @@ export default function FullscreenExpansion() {
                     sizes="180px"
                     className="object-contain p-1 opacity-90 hover:scale-105 transition-transform duration-500"
                   />
-                </div>
+                </Link>
                 <div className="space-y-1 text-left">
                   <span className="text-[8px] font-bold uppercase tracking-wider text-[#8C8276]">
                     {product.category}
                   </span>
-                  <h4 className="font-serif text-xs font-semibold tracking-wide text-white line-clamp-1">
-                    {product.name}
-                  </h4>
+                  <Link href={`/product/${product.id}`} className="hover:underline">
+                    <h4 className="font-serif text-xs font-semibold tracking-wide text-white line-clamp-1 cursor-pointer">
+                      {product.name}
+                    </h4>
+                  </Link>
                   <p className="text-[9px] text-white/50 leading-relaxed font-light line-clamp-1">
                     {product.description}
                   </p>
@@ -72,7 +75,7 @@ export default function FullscreenExpansion() {
                 key={`${product.id}-cabinet-2`}
                 className="w-[180px] sm:w-[220px] bg-neutral-900 rounded-2xl border border-neutral-800 p-4 flex flex-col space-y-4 shrink-0 hover:border-neutral-700 transition-colors duration-300 shadow-xl"
               >
-                <div className="relative aspect-[4/3] bg-neutral-950 rounded-xl overflow-hidden flex items-center justify-center p-2">
+                <Link href={`/product/${product.id}`} className="block relative w-full aspect-[4/3] bg-neutral-950 rounded-xl overflow-hidden p-2 cursor-pointer">
                   <Image
                     src={product.image}
                     alt={product.name}
@@ -80,14 +83,16 @@ export default function FullscreenExpansion() {
                     sizes="180px"
                     className="object-contain p-1 opacity-90 hover:scale-105 transition-transform duration-500"
                   />
-                </div>
+                </Link>
                 <div className="space-y-1 text-left">
                   <span className="text-[8px] font-bold uppercase tracking-wider text-[#8C8276]">
                     {product.category}
                   </span>
-                  <h4 className="font-serif text-xs font-semibold tracking-wide text-white line-clamp-1">
-                    {product.name}
-                  </h4>
+                  <Link href={`/product/${product.id}`} className="hover:underline">
+                    <h4 className="font-serif text-xs font-semibold tracking-wide text-white line-clamp-1 cursor-pointer">
+                      {product.name}
+                    </h4>
+                  </Link>
                   <p className="text-[9px] text-white/50 leading-relaxed font-light line-clamp-1">
                     {product.description}
                   </p>
