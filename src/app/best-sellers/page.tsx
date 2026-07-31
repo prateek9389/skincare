@@ -57,7 +57,7 @@ export default function BestSellersPage() {
 
   // Sync cart with localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("aura_cart");
+    const saved = localStorage.getItem("gunalife_cart");
     if (saved) {
       try {
         setCartItems(JSON.parse(saved));
@@ -65,12 +65,12 @@ export default function BestSellersPage() {
         console.error(e);
       }
     }
-    cartLoadedRef.current = true;
+    setTimeout(() => { cartLoadedRef.current = true; }, 100);
   }, []);
 
   useEffect(() => {
     if (cartLoadedRef.current) {
-      localStorage.setItem("aura_cart", JSON.stringify(cartItems));
+      localStorage.setItem("gunalife_cart", JSON.stringify(cartItems));
     }
   }, [cartItems]);
 
@@ -125,7 +125,7 @@ export default function BestSellersPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FBF9F6] selection:bg-[#D4C5B9] selection:text-[#1C1B19] relative overflow-x-hidden pt-20">
+    <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#5BA6D6] selection:text-[#0D3C6A] relative overflow-x-hidden pt-20">
       
       {/* Toast Alert */}
       <AnimatePresence>
@@ -134,9 +134,10 @@ export default function BestSellersPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 right-6 z-50 bg-[#1C1B19] text-white px-6 py-3.5 rounded-xl shadow-xl text-xs tracking-wider uppercase font-semibold flex items-center gap-3 border border-neutral-800"
+            className="fixed bottom-6 right-6 z-50 bg-[#0D3C6A] text-white px-6 py-3.5 rounded-xl shadow-xl text-xs tracking-wider uppercase font-semibold flex items-center gap-3 border border-neutral-800"
           >
-            <span>{toastMessage}</span>
+            <span>Item is in cart</span>
+            <a href="/checkout" className="bg-white text-[#0D3C6A] px-3 py-1.5 rounded-md hover:bg-neutral-200 transition-colors">View Cart</a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -150,17 +151,17 @@ export default function BestSellersPage() {
       <main className="flex-grow select-none">
         
         {/* 1. HERO SECTION (Serene Layout with Video on the Right) */}
-        <section className="relative w-full h-[75vh] grid grid-cols-1 md:grid-cols-12 items-stretch border-b border-[#EAE3DC]">
+        <section className="relative w-full h-[75vh] grid grid-cols-1 md:grid-cols-12 items-stretch border-b border-[#B0B7C3]">
           
           {/* Left Block: Catalog metadata & brand details */}
           <div className="md:col-span-5 p-8 sm:p-12 lg:p-16 flex flex-col justify-between items-start bg-[#FAF6F0]/20 text-left relative">
-            <div className="flex justify-between items-center w-full text-[10px] tracking-[0.25em] text-[#8C8276] uppercase">
-              <span>Aura Skincare</span>
+            <div className="flex justify-between items-center w-full text-[10px] tracking-[0.25em] text-[#00A896] uppercase">
+              <span>Guna Life Skincare</span>
               <span>09 Bestsellers</span>
             </div>
 
             <div className="space-y-6 my-auto">
-              <div className="relative w-28 h-28 bg-[#FAF6F0] rounded-2xl overflow-hidden p-2 border border-[#EAE3DC] shadow-inner">
+              <div className="relative w-28 h-28 bg-[#FAF6F0] rounded-2xl overflow-hidden p-2 border border-[#B0B7C3] shadow-inner">
                 <Image
                   src="/category-moisturizers.png"
                   alt="Catalog Preview"
@@ -171,7 +172,7 @@ export default function BestSellersPage() {
               </div>
               <button
                 onClick={() => router.push("/shop")}
-                className="group flex items-center gap-2 text-xs font-bold tracking-widest text-[#1C1B19] uppercase"
+                className="group flex items-center gap-2 text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 Catalog 
                 <span className="transform group-hover:translate-x-1 transition-transform">&rarr;</span>
@@ -180,7 +181,7 @@ export default function BestSellersPage() {
           </div>
 
           {/* Right Block: Autoplay loop video background */}
-          <div className="md:col-span-7 relative overflow-hidden bg-neutral-900 border-l border-[#EAE3DC]/80">
+          <div className="md:col-span-7 relative overflow-hidden bg-neutral-900 border-l border-[#B0B7C3]/80">
             <video
               src="/hero-bg.mp4"
               autoPlay
@@ -195,7 +196,7 @@ export default function BestSellersPage() {
 
           {/* Huge typography title spanning the bottom of the section */}
           <div className="absolute bottom-4 left-0 w-full overflow-hidden pointer-events-none z-10">
-            <h1 className="font-serif text-[12vw] tracking-[0.1em] text-[#1C1B19]/90 font-light leading-none text-center uppercase translate-y-4">
+            <h1 className="font-serif text-[12vw] tracking-[0.1em] text-[#0D3C6A]/90 font-light leading-none text-center uppercase translate-y-4">
               Serene
             </h1>
           </div>
@@ -203,17 +204,17 @@ export default function BestSellersPage() {
 
         {/* 2. "NEW LINE" SECTION */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-left">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-12 border-b border-[#EAE3DC] pb-4">
-            <h2 className="font-serif text-3xl font-light tracking-wide text-[#1C1B19]">Bestsellers</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-12 border-b border-[#B0B7C3] pb-4">
+            <h2 className="font-serif text-3xl font-light tracking-wide text-[#0D3C6A]">Bestsellers</h2>
             
             {/* Filter buttons on the right */}
-            <div className="flex flex-wrap gap-6 text-[10px] font-bold tracking-widest text-[#8C8276] uppercase">
+            <div className="flex flex-wrap gap-6 text-[10px] font-bold tracking-widest text-[#00A896] uppercase">
               {["Serum", "Daily cream", "Toner", "Oil", "Shop all"].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
-                  className={`hover:text-[#1C1B19] transition-colors pb-1 ${
-                    activeFilter === filter ? "text-[#1C1B19] border-b border-[#1C1B19]" : ""
+                  className={`hover:text-[#0D3C6A] transition-colors pb-1 ${
+                    activeFilter === filter ? "text-[#0D3C6A] border-b border-[#0D3C6A]" : ""
                   }`}
                 >
                   {filter}
@@ -236,7 +237,7 @@ export default function BestSellersPage() {
                 {/* Image container */}
                 <div 
                   onClick={() => router.push(`/product/${product.id}`)}
-                  className="relative aspect-[4/5] bg-white rounded-2xl overflow-hidden p-6 border border-[#EAE3DC]/30 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md cursor-pointer"
+                  className="relative aspect-[4/5] bg-white rounded-2xl overflow-hidden p-6 border border-[#B0B7C3]/30 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md cursor-pointer"
                 >
                   <div className={`absolute inset-0 opacity-10 transition-opacity group-hover:opacity-15 ${
                     idx === 0 ? "bg-neutral-500" :
@@ -255,19 +256,19 @@ export default function BestSellersPage() {
 
                 {/* Info and price */}
                 <div className="space-y-1.5 px-1">
-                  <h4 className="font-serif text-sm font-semibold tracking-wide text-[#1C1B19]">
+                  <h4 className="font-serif text-sm font-semibold tracking-wide text-[#0D3C6A]">
                     {product.name}
                   </h4>
-                  <p className="text-[11px] text-[#8C8276] leading-relaxed">
+                  <p className="text-[11px] text-[#00A896] leading-relaxed">
                     {product.description}
                   </p>
                   <div className="flex justify-between items-center pt-2">
-                    <span className="font-serif text-sm font-medium text-[#1C1B19]">
+                    <span className="font-serif text-sm font-medium text-[#0D3C6A]">
                       {product.price.toFixed(0)}$
                     </span>
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="text-[9px] font-bold tracking-widest text-[#1C1B19] border-b border-[#1C1B19] pb-0.5 uppercase hover:opacity-75"
+                      className="text-[9px] font-bold tracking-widest text-[#0D3C6A] border-b border-[#0D3C6A] pb-0.5 uppercase hover:opacity-75"
                     >
                       Add to cart
                     </button>
@@ -279,20 +280,20 @@ export default function BestSellersPage() {
         </section>
 
         {/* 3. TYPOGRAPHIC MID SECTION (Sustainable Care with Dropper overlap) */}
-        <section className="w-full py-28 bg-[#FAF6F0]/40 border-y border-[#EAE3DC]/75 relative overflow-hidden select-none">
+        <section className="w-full py-28 bg-[#FAF6F0]/40 border-y border-[#B0B7C3]/75 relative overflow-hidden select-none">
           <div className="max-w-6xl mx-auto px-4 text-center relative z-10 flex flex-col justify-center items-center min-h-[300px]">
             
             {/* Split typography text lines */}
-            <h2 className="font-serif text-[7vw] sm:text-[6vw] font-light tracking-[0.25em] text-[#1C1B19] uppercase leading-none text-center">
+            <h2 className="font-serif text-[7vw] sm:text-[6vw] font-light tracking-[0.25em] text-[#0D3C6A] uppercase leading-none text-center">
               SUSTAIN<span className="opacity-0">___</span>LE CARE
             </h2>
             
-            <h2 className="font-serif text-[7vw] sm:text-[6vw] font-light tracking-[0.25em] text-[#1C1B19] uppercase leading-none text-center mt-4">
+            <h2 className="font-serif text-[7vw] sm:text-[6vw] font-light tracking-[0.25em] text-[#0D3C6A] uppercase leading-none text-center mt-4">
               FOR RAD<span className="opacity-0">___</span>NT SKIN
             </h2>
 
             {/* Float details */}
-            <div className="flex justify-between w-full max-w-4xl text-[10px] tracking-widest text-[#8C8276] uppercase mt-12 font-medium px-4">
+            <div className="flex justify-between w-full max-w-4xl text-[10px] tracking-widest text-[#00A896] uppercase mt-12 font-medium px-4">
               <span>True beauty comes from harmony</span>
               <span>Natural components</span>
             </div>
@@ -316,7 +317,7 @@ export default function BestSellersPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-stretch">
             
             {/* Left Box: Smiling model photo */}
-            <div className="relative rounded-3xl overflow-hidden min-h-[400px] border border-[#EAE3DC]">
+            <div className="relative rounded-3xl overflow-hidden min-h-[400px] border border-[#B0B7C3]">
               <Image
                 src="/instagram-models.png"
                 alt="Serene Philosophy Model"
@@ -330,15 +331,15 @@ export default function BestSellersPage() {
             </div>
 
             {/* Right Box: Philosophy description and Shop now button */}
-            <div className="bg-[#FAF6F0] rounded-3xl p-8 sm:p-12 border border-[#EAE3DC] flex flex-col justify-between space-y-12">
+            <div className="bg-[#FAF6F0] rounded-3xl p-8 sm:p-12 border border-[#B0B7C3] flex flex-col justify-between space-y-12">
               <div className="space-y-6">
-                <span className="text-[10px] font-bold tracking-[0.25em] text-[#8C8276] uppercase block">
-                  Aura Philosophy
+                <span className="text-[10px] font-bold tracking-[0.25em] text-[#00A896] uppercase block">
+                  Guna Life Philosophy
                 </span>
-                <h3 className="font-serif text-3xl sm:text-4xl text-[#1C1B19] font-light leading-tight">
+                <h3 className="font-serif text-3xl sm:text-4xl text-[#0D3C6A] font-light leading-tight">
                   Our philosophy
                 </h3>
-                <div className="space-y-4 text-xs text-[#8C8276] leading-relaxed font-light">
+                <div className="space-y-4 text-xs text-[#00A896] leading-relaxed font-light">
                   <p>
                     We stand for clean, ethical and conscious beauty. Our cosmetics are made with natural ingredients, responsibly sourced and never tested on animals. We care about what goes on your skin and how it affects the planet. Beauty should be kind — to you and to the world around.
                   </p>
@@ -359,15 +360,15 @@ export default function BestSellersPage() {
         </section>
 
         {/* 5. INFINITE CAROUSEL MARQUEE (Product Shown Marquee) */}
-        <section className="w-full py-10 bg-transparent border-t border-[#EAE3DC] overflow-hidden select-none">
+        <section className="w-full py-10 bg-transparent border-t border-[#B0B7C3] overflow-hidden select-none">
           <div className="flex w-max gap-8 px-8 animate-marquee hover:[animation-play-state:paused]">
             {BESTSELLER_TUBE_PRODUCTS.concat(BESTSELLER_TUBE_PRODUCTS).map((product, idx) => (
               <div
                 key={`${product.id}-marquee-${idx}`}
                 onClick={() => router.push(`/product/${product.id}`)}
-                className="flex items-center gap-6 bg-[#FAF6F0] border border-[#EAE3DC]/60 px-8 py-4 rounded-2xl cursor-pointer hover:border-[#1C1B19]/30 transition-colors"
+                className="flex items-center gap-6 bg-[#FAF6F0] border border-[#B0B7C3]/60 px-8 py-4 rounded-2xl cursor-pointer hover:border-[#0D3C6A]/30 transition-colors"
               >
-                <div className="relative w-12 h-12 bg-white rounded-lg overflow-hidden p-1 border border-[#EAE3DC]">
+                <div className="relative w-12 h-12 bg-white rounded-lg overflow-hidden p-1 border border-[#B0B7C3]">
                   <Image
                     src={product.image}
                     alt={product.name}
@@ -377,13 +378,13 @@ export default function BestSellersPage() {
                   />
                 </div>
                 <div className="text-left">
-                  <span className="text-[8px] font-bold text-[#8C8276] uppercase tracking-wider block">
+                  <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider block">
                     {product.category}
                   </span>
-                  <span className="font-serif text-xs font-semibold text-[#1C1B19] block">
+                  <span className="font-serif text-xs font-semibold text-[#0D3C6A] block">
                     {product.name}
                   </span>
-                  <span className="text-[10px] text-[#8C8276] block">
+                  <span className="text-[10px] text-[#00A896] block">
                     {product.description}
                   </span>
                 </div>

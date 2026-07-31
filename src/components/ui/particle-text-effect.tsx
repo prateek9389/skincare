@@ -133,7 +133,7 @@ interface ParticleTextEffectProps {
 }
 
 export function ParticleTextEffect({ 
-  words = ["AURA", "SKINCARE"],
+  words = ["GUNALIFE", "SKINCARE"],
   particleColor = { r: 28, g: 27, b: 25 },
   bgColor = "rgba(251, 249, 246, 0.15)" 
 }: ParticleTextEffectProps) {
@@ -174,7 +174,7 @@ export function ParticleTextEffect({
     const offscreenCtx = offscreenCanvas.getContext("2d")!;
 
     offscreenCtx.fillStyle = "white";
-    // Using clean system serif style font for AURA brand style
+    // Using clean system serif style font for GUNALIFE brand style
     offscreenCtx.font = "italic 300 90px Playfair Display, Georgia, serif";
     offscreenCtx.textAlign = "center";
     offscreenCtx.textBaseline = "middle";

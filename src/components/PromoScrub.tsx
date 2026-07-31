@@ -19,7 +19,7 @@ export default function PromoScrub() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full h-[450px] sm:h-[500px] lg:h-[550px] bg-[#EAE3DC] overflow-hidden flex flex-col justify-between p-6 sm:p-10 lg:p-12 border-b border-[#D4C5B9] select-none"
+      className="relative w-full h-[450px] sm:h-[500px] lg:h-[550px] bg-[#B0B7C3] overflow-hidden flex flex-col justify-between p-6 sm:p-10 lg:p-12 border-b border-[#5BA6D6] select-none"
     >
       {/* TOP PILLS ROW (Floating UI elements) */}
       <div className="relative z-20 flex justify-between items-center w-full">
@@ -80,7 +80,7 @@ export default function PromoScrub() {
           className="bg-white/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 shadow-lg max-w-[200px] sm:max-w-[220px] border border-white/50 space-y-3"
         >
           <div className="space-y-0.5">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-[#8C8276]">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-[#00A896]">
               ( for body )
             </span>
             <h4 className="text-xs sm:text-sm font-bold text-black tracking-wide leading-tight">

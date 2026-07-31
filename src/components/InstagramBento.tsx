@@ -12,7 +12,7 @@ interface BentoCard {
 
 const CARDS: BentoCard[] = [
   { image: "/instagram-hands-cream.png", height: "270px", alt: "Applying cream lotion" },
-  { image: "/daily-moisturizer.png", height: "180px", alt: "Aura daily moisturizer" },
+  { image: "/daily-moisturizer.png", height: "180px", alt: "Guna Life daily moisturizer" },
   { image: "/instagram-models.png", height: "210px", alt: "Models smiling" },
   { image: "/promise-model.png", height: "250px", alt: "Model close-up glowing skin" },
   { image: "/instagram-flatlay.png", height: "240px", alt: "Beauty product flatlay" },
@@ -54,7 +54,7 @@ export default function InstagramBento() {
   };
 
   return (
-    <section className="w-full py-16 md:py-24 bg-transparent border-b border-[#EAE3DC]">
+    <section className="w-full py-16 md:py-24 bg-transparent border-b border-[#B0B7C3]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
@@ -65,14 +65,14 @@ export default function InstagramBento() {
           variants={headerVariants}
           className="flex justify-between items-center mb-12"
         >
-          <h2 className="text-xl sm:text-2xl font-serif text-[#1C1B19] tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-serif text-[#0D3C6A] tracking-tight">
             Follow us on Instagram
           </h2>
           <a
             href="https://instagram.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-2 px-4 py-2 border border-[#D4C5B9] hover:border-[#1C1B19] rounded-full text-[10px] font-bold uppercase tracking-widest text-[#1C1B19] bg-white transition-colors shadow-xs cursor-pointer"
+            className="group flex items-center gap-2 px-4 py-2 border border-[#5BA6D6] hover:border-[#0D3C6A] rounded-full text-[10px] font-bold uppercase tracking-widest text-[#0D3C6A] bg-white transition-colors shadow-xs cursor-pointer"
           >
             @blissful_cosmetics
             <svg
@@ -103,7 +103,7 @@ export default function InstagramBento() {
             <motion.div
               key={idx}
               variants={cardVariants}
-              className="break-inside-avoid relative rounded-3xl overflow-hidden group border border-[#EAE3DC] cursor-pointer shadow-xs hover:shadow-md transition-shadow duration-300"
+              className="break-inside-avoid relative rounded-3xl overflow-hidden group border border-[#B0B7C3] cursor-pointer shadow-xs hover:shadow-md transition-shadow duration-300"
               style={{ height: card.height }}
             >
               <Image

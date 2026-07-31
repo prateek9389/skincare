@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { PRODUCTS, Product } from "@/data/products";
@@ -10,146 +10,189 @@ interface ProductGridProps {
   onAddToCart: (product: Product) => void;
 }
 
-export default function ProductGrid({ onAddToCart }: ProductGridProps) {
-  const headerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
-    },
-  };
+// Carousel Component
+const HorizontalProductCarousel = ({
+  title,
+  subtitle,
+  products,
+  onAddToCart,
+  styleVariant = "default",
+}: {
+  title: string;
+  subtitle: string;
+  products: Product[];
+  onAddToCart: (product: Product) => void;
+  styleVariant?: "default" | "featured" | "essentials";
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08,
-      },
-    },
-  };
+  // Define styles based on variant
+  const bgClass =
+    styleVariant === "featured"
+      ? "bg-[#FAF6F0]"
+      : styleVariant === "essentials"
+      ? "bg-[#0D3C6A] text-white"
+      : "bg-white";
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 35 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: [0.16, 1, 0.3, 1] as const,
-      },
-    },
-  };
+  const titleColor =
+    styleVariant === "essentials" ? "text-white" : "text-[#0D3C6A]";
+  const subtitleColor =
+    styleVariant === "essentials" ? "text-[#5BA6D6]" : "text-[#00A896]";
+  
+  const cardBgClass =
+    styleVariant === "featured"
+      ? "bg-transparent border-none shadow-none"
+      : styleVariant === "essentials"
+      ? "bg-white/10 border border-white/20 backdrop-blur-md rounded-2xl"
+      : "bg-white border border-[#B0B7C3]/60 rounded-2xl";
+      
+  const cardTextColor =
+    styleVariant === "essentials" ? "text-white" : "text-[#0D3C6A]";
+  const cardDescColor =
+    styleVariant === "essentials" ? "text-white/70" : "text-[#00A896]";
+  const cardImageBgClass =
+    styleVariant === "featured"
+      ? "bg-[#EAE4D9] rounded-2xl overflow-hidden shadow-sm"
+      : styleVariant === "essentials"
+      ? "bg-white/5 rounded-t-2xl overflow-hidden"
+      : "bg-[#F5F2EB] rounded-t-2xl overflow-hidden";
+      
+  const buttonClass =
+    styleVariant === "essentials"
+      ? "border-white text-white hover:bg-white hover:text-[#0D3C6A]"
+      : "border-[#0D3C6A] text-[#0D3C6A] hover:bg-[#0D3C6A] hover:text-white";
 
   return (
-    <section id="best-sellers" className="w-full py-16 md:py-24 bg-transparent">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header with Animation */}
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.5 }}
-          variants={headerVariants}
-          className="flex justify-between items-baseline mb-12 border-b border-[#EAE3DC] pb-4"
-        >
-          <h2 className="text-sm font-bold tracking-[0.25em] text-[#1C1B19] uppercase">
-            Best Sellers
-          </h2>
+    <div className={`py-12 md:py-20 ${bgClass}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-baseline gap-4 md:gap-0 border-b border-opacity-20 pb-4" style={{ borderColor: styleVariant === 'essentials' ? 'rgba(255,255,255,0.2)' : 'rgba(176,183,195,0.5)' }}>
+          <div>
+            <h2 className={`text-xl sm:text-2xl font-serif tracking-widest uppercase ${titleColor}`}>
+              {title}
+            </h2>
+            <p className={`text-xs font-semibold tracking-wider mt-1 ${subtitleColor} uppercase`}>
+              {subtitle}
+            </p>
+          </div>
           <a
             href="/shop"
-            className="group flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-[#1C1B19] uppercase hover:text-[#8C8276] transition-colors"
+            className={`group flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase transition-colors ${titleColor} hover:opacity-70`}
           >
-            View All
-            <svg
-              className="w-3 h-3 transform group-hover:translate-x-0.5 transition-transform"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-                d="M9 5l7 7-7 7"
-              />
+            Explore Collection
+            <svg className="w-3 h-3 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
             </svg>
           </a>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Responsive Grid with Premium Cards */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.1 }}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          ref={scrollRef}
+          className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-8"
         >
-          {PRODUCTS.map((product) => (
+          {products.map((product) => (
             <motion.div
               key={product.id}
-              variants={itemVariants}
-              className="flex flex-col bg-white border border-[#EAE3DC]/60 rounded-2xl overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-500 relative"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6 }}
+              className={`snap-start flex-shrink-0 flex flex-col group relative w-[60vw] sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)] ${cardBgClass}`}
             >
-              {/* Product Image Container (Vertical Editorial Aspect Ratio) */}
-              <Link href={`/product/${product.id}`} className="block w-full aspect-[4/5] bg-[#F5F2EB] relative overflow-hidden cursor-pointer">
+              {/* Special Tag for Featured */}
+              {styleVariant === "featured" && product.tag && (
+                <div className="absolute top-3 right-3 z-10 bg-[#0D3C6A] text-white text-[9px] font-bold tracking-widest px-2 py-1 rounded-sm uppercase">
+                  {product.tag}
+                </div>
+              )}
+            
+              {/* Product Image */}
+              <Link href={`/product/${product.id}`} className={`block w-full aspect-[4/5] relative cursor-pointer ${cardImageBgClass}`}>
                 <Image
                   src={product.image}
                   alt={product.name}
                   fill
-                  sizes="(max-w-640px) 100vw, (max-w-1024px) 50vw, 20vw"
+                  sizes="(max-w-640px) 50vw, (max-w-1024px) 33vw, 25vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               </Link>
 
               {/* Product Info */}
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div className={`p-4 flex-1 flex flex-col justify-between space-y-4 ${styleVariant === 'featured' ? 'px-1' : ''}`}>
                 <div className="space-y-1.5 text-left">
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-[#8C8276]">
+                  <span className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-widest ${cardDescColor}`}>
                     {product.category}
                   </span>
-                  <Link href={`/product/${product.id}`} className="hover:underline">
-                    <h3 className="font-serif text-sm font-semibold tracking-wide text-[#1C1B19] group-hover:text-[#BCAE9E] transition-colors line-clamp-1">
+                  <Link href={`/product/${product.id}`} className="hover:opacity-70 block">
+                    <h3 className={`font-serif text-xs sm:text-sm font-semibold tracking-wide transition-colors line-clamp-1 ${cardTextColor}`}>
                       {product.name}
                     </h3>
                   </Link>
-                  <p className="text-[11px] text-[#8C8276] leading-relaxed tracking-wide font-light line-clamp-1">
+                  <p className={`text-[10px] sm:text-[11px] leading-relaxed tracking-wide font-light line-clamp-2 ${cardDescColor}`}>
                     {product.description}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs sm:text-sm font-bold text-[#1C1B19]">
-                    ${product.price.toFixed(2)}
+                <div className="flex items-center justify-between pt-2">
+                  <span className={`text-xs sm:text-sm font-bold ${cardTextColor}`}>
+                    ₹{product.price.toFixed(2)}
                   </span>
                   
-                  {/* Premium Outlined Add Button */}
+                  {/* Add Button */}
                   <button
                     onClick={() => onAddToCart(product)}
                     aria-label={`Add ${product.name} to cart`}
-                    className="w-8 h-8 rounded-full border border-[#1C1B19] hover:bg-[#1C1B19] hover:text-white text-[#1C1B19] flex items-center justify-center transition-all duration-300 transform active:scale-95 cursor-pointer shadow-xs"
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-300 transform active:scale-95 cursor-pointer shadow-xs ${buttonClass}`}
                   >
-                    <svg
-                      className="w-4.5 h-4.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 4v16m8-8H4"
-                      />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
                 </div>
               </div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
+    </div>
+  );
+};
+
+export default function ProductGrid({ onAddToCart }: ProductGridProps) {
+  // Group the products based on tags/categories to populate 3 sections
+  const bestSellers = PRODUCTS.slice(0, 6);
+  const featured = PRODUCTS.filter((p) => p.tag === "HIT");
+  const essentials = PRODUCTS.filter((p) => ["Cleansers", "Moisturizers", "Toners"].includes(p.category)).slice(0, 6);
+
+  return (
+    <section id="shop-sections" className="w-full flex flex-col">
+      {/* 1. Best Sellers (Standard Style) */}
+      <HorizontalProductCarousel
+        title="Best Sellers"
+        subtitle="Our most loved formulas"
+        products={bestSellers}
+        onAddToCart={onAddToCart}
+        styleVariant="default"
+      />
+      
+      {/* 2. Featured (Editorial Style) */}
+      <HorizontalProductCarousel
+        title="Featured Highlights"
+        subtitle="Editor's Picks & Trending"
+        products={featured}
+        onAddToCart={onAddToCart}
+        styleVariant="featured"
+      />
+      
+      {/* 3. Skincare Essentials (Dark Glassmorphism Style) */}
+      <HorizontalProductCarousel
+        title="Skincare Essentials"
+        subtitle="Your daily ritual"
+        products={essentials}
+        onAddToCart={onAddToCart}
+        styleVariant="essentials"
+      />
     </section>
   );
 }

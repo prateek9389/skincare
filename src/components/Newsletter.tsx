@@ -34,7 +34,7 @@ export default function Newsletter() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="border-b border-neutral-900 pb-12 mb-12 flex flex-col md:flex-row items-center justify-between gap-6"
         >
-          <span className="text-[10px] font-bold tracking-[0.25em] text-[#8C8276] uppercase">
+          <span className="text-[10px] font-bold tracking-[0.25em] text-[#00A896] uppercase">
             As Seen In
           </span>
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 text-xl sm:text-2xl font-serif text-neutral-500 tracking-widest uppercase">
@@ -54,14 +54,14 @@ export default function Newsletter() {
           className="max-w-2xl mx-auto text-center space-y-8"
         >
           <div className="space-y-3">
-            <span className="text-[10px] font-bold tracking-[0.25em] text-[#8C8276] uppercase block">
+            <span className="text-[10px] font-bold tracking-[0.25em] text-[#00A896] uppercase block">
               Let's Glow Together
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white leading-tight">
               Subscribe to get 15% off <br className="hidden sm:inline" />
               your first order
             </h2>
-            <p className="text-xs sm:text-sm text-[#8C8276] tracking-wide font-light">
+            <p className="text-xs sm:text-sm text-[#00A896] tracking-wide font-light">
               Receive skincare tips, early access to new product drops, and exclusive offers.
             </p>
           </div>

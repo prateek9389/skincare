@@ -1,33 +1,58 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 interface Category {
+  id?: string;
   name: string;
   image: string;
 }
 
 export default function CategoryGrid() {
-  const categories: Category[] = [
-    { name: "Cleansers", image: "/category-cleansers.png" },
-    { name: "Serums", image: "/category-serums.png" },
-    { name: "Moisturizers", image: "/category-moisturizers.png" },
-    { name: "Sun Care", image: "/mineral-sunscreen.png" },
-    { name: "Toners", image: "/niacinamide-toner.png" },
-    { name: "Sets & Kits", image: "/hero-products.png" },
-    { name: "New Arrivals", image: "/coconut-body-butter.png" },
-  ];
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  // We duplicate the categories array to create a seamless infinite loop marquee effect
-  const marqueeItems = [...categories, ...categories];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "categories"));
+        const cats: Category[] = [];
+        querySnapshot.forEach((doc) => {
+          cats.push({ id: doc.id, ...doc.data() } as Category);
+        });
+        
+        if (cats.length === 0) {
+          // Fallback if db is empty
+          setCategories([
+            { name: "Cleansers", image: "/category-cleansers.png" },
+            { name: "Serums", image: "/category-serums.png" },
+            { name: "Moisturizers", image: "/category-moisturizers.png" },
+            { name: "Sun Care", image: "/mineral-sunscreen.png" },
+            { name: "Toners", image: "/niacinamide-toner.png" },
+            { name: "Sets & Kits", image: "/hero-products.png" },
+            { name: "New Arrivals", image: "/coconut-body-butter.png" },
+          ]);
+        } else {
+          setCategories(cats);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Duplicate items for seamless marquee
+  const marqueeItems = [...categories, ...categories, ...categories];
 
   return (
-    <section id="collections" className="w-full py-16 md:py-20 bg-transparent border-b border-[#EAE3DC] overflow-hidden select-none">
+    <section id="collections" className="w-full py-16 md:py-20 bg-transparent border-b border-[#B0B7C3] overflow-hidden select-none">
       
       {/* Section Title */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 text-center sm:text-left">
-        <h2 className="text-xs font-bold tracking-[0.25em] text-[#8C8276] uppercase">
+        <h2 className="text-xs font-bold tracking-[0.25em] text-[#00A896] uppercase">
           Shop by Category
         </h2>
       </div>
@@ -44,7 +69,7 @@ export default function CategoryGrid() {
           {marqueeItems.map((category, idx) => (
             <button
               key={`${category.name}-${idx}`}
-              className="relative aspect-[3/4] w-[140px] sm:w-[170px] rounded-2xl overflow-hidden group border border-[#EAE3DC]/40 shadow-xs hover:shadow-md transition-all duration-500 cursor-pointer shrink-0"
+              className="relative aspect-[3/4] w-[140px] sm:w-[170px] rounded-2xl overflow-hidden group border border-[#B0B7C3]/40 shadow-xs hover:shadow-md transition-all duration-500 cursor-pointer shrink-0"
             >
               {/* Category Background Image */}
               <Image

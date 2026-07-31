@@ -45,8 +45,9 @@ export default function HorizontalScrollGallery() {
 
   return (
     <div 
+      id="about"
       ref={sectionRef} 
-      className="relative w-full h-screen overflow-hidden bg-[#FBF9F6] border-b border-[#EAE3DC]"
+      className="relative w-full h-screen overflow-hidden bg-[#FFFFFF] border-b border-[#B0B7C3]"
     >
       {/* Horizontal Track Container - Cards take 80% screen (80vw and 80vh) */}
       <div 
@@ -55,29 +56,29 @@ export default function HorizontalScrollGallery() {
       >
         
         {/* CARD 1: Intro Text & Hero Image (80vw / 80vh) */}
-        <div className="w-[80vw] h-[80vh] flex-shrink-0 bg-[#F5F2EB] rounded-3xl overflow-hidden border border-[#EAE3DC] shadow-md grid grid-cols-1 lg:grid-cols-2 items-stretch">
-          <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16 space-y-6 text-[#1C1B19]">
-            <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C8276] uppercase block">
-              AURA Collections
+        <div className="w-[80vw] h-[80vh] flex-shrink-0 bg-[#F5F2EB] rounded-3xl overflow-hidden border border-[#B0B7C3] shadow-md grid grid-cols-1 lg:grid-cols-2 items-stretch">
+          <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16 space-y-6 text-[#0D3C6A]">
+            <span className="text-[10px] font-bold tracking-[0.3em] text-[#00A896] uppercase block">
+              GUNALIFE Collections
             </span>
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#1C1B19] leading-tight font-light">
+            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#0D3C6A] leading-tight font-light">
               Alternative rituals <br />
               for <span className="italic font-light">skin health.</span>
             </h2>
-            <p className="text-xs sm:text-sm text-[#5C554D] leading-relaxed tracking-wide font-light max-w-md">
+            <p className="text-xs sm:text-sm text-[#00A896] leading-relaxed tracking-wide font-light max-w-md">
               Discover our carefully curated products and step-by-step rituals. Scroll horizontally to browse our collection, showing alternating videos and product images.
             </p>
-            <div className="pt-2 flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-[#1C1B19]">
+            <div className="pt-2 flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-[#0D3C6A]">
               <span>Scroll down to slide</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </div>
           </div>
-          <div className="relative h-full w-full bg-[#EAE3DC] pointer-events-none">
+          <div className="relative h-full w-full bg-[#B0B7C3] pointer-events-none">
             <Image 
               src="/hero-products.png" 
-              alt="AURA skincare collection" 
+              alt="GUNALIFE skincare collection" 
               fill 
               sizes="40vw"
               className="object-cover"
@@ -86,7 +87,7 @@ export default function HorizontalScrollGallery() {
         </div>
 
         {/* CARD 2: Video Panel (Deep Cleansing Loop, 80vw / 80vh) */}
-        <div className="w-[80vw] h-[80vh] flex-shrink-0 relative overflow-hidden bg-black rounded-3xl border border-[#EAE3DC] shadow-md">
+        <div className="w-[80vw] h-[80vh] flex-shrink-0 relative overflow-hidden bg-black rounded-3xl border border-[#B0B7C3] shadow-md">
           <video 
             autoPlay 
             loop 
@@ -104,8 +105,8 @@ export default function HorizontalScrollGallery() {
         </div>
 
         {/* CARD 3: Image Panel (Active Hydration Splash, 80vw / 80vh) */}
-        <div className="w-[80vw] h-[80vh] flex-shrink-0 bg-white rounded-3xl border border-[#EAE3DC] shadow-md grid grid-cols-1 lg:grid-cols-2 items-stretch">
-          <div className="relative h-full w-full bg-[#EAE3DC] flex items-center justify-center p-8 pointer-events-none">
+        <div className="w-[80vw] h-[80vh] flex-shrink-0 bg-white rounded-3xl border border-[#B0B7C3] shadow-md grid grid-cols-1 lg:grid-cols-2 items-stretch">
+          <div className="relative h-full w-full bg-[#B0B7C3] flex items-center justify-center p-8 pointer-events-none">
             <div className="relative w-full max-w-[280px] aspect-square drop-shadow-2xl">
               <Image 
                 src="/cream-splash.png" 
@@ -116,21 +117,21 @@ export default function HorizontalScrollGallery() {
               />
             </div>
           </div>
-          <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16 space-y-6 text-[#1C1B19]">
-            <span className="text-[9px] font-bold tracking-[0.25em] text-[#8C8276] uppercase block">
+          <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16 space-y-6 text-[#0D3C6A]">
+            <span className="text-[9px] font-bold tracking-[0.25em] text-[#00A896] uppercase block">
               Step 02
             </span>
             <h3 className="font-serif text-2xl sm:text-3xl uppercase tracking-wider">
               Active Hydration
             </h3>
-            <p className="text-xs sm:text-sm text-[#5C554D] leading-relaxed font-light max-w-md">
+            <p className="text-xs sm:text-sm text-[#00A896] leading-relaxed font-light max-w-md">
               Locks moisture deep into your cells with organic coconut oil extracts, nourishing squalane, and barrier protection lipid complexes.
             </p>
           </div>
         </div>
 
         {/* CARD 4: Video Panel (Model Skin Promise Loop, 80vw / 80vh) */}
-        <div className="w-[80vw] h-[80vh] flex-shrink-0 relative overflow-hidden bg-black rounded-3xl border border-[#EAE3DC] shadow-md">
+        <div className="w-[80vw] h-[80vh] flex-shrink-0 relative overflow-hidden bg-black rounded-3xl border border-[#B0B7C3] shadow-md">
           <video 
             autoPlay 
             loop 
@@ -148,15 +149,15 @@ export default function HorizontalScrollGallery() {
         </div>
 
         {/* CARD 5: Image Panel (Daily Moisturizer Jar, 80vw / 80vh) */}
-        <div className="w-[80vw] h-[80vh] flex-shrink-0 bg-[#F5F2EB] rounded-3xl border border-[#EAE3DC] shadow-md grid grid-cols-1 lg:grid-cols-2 items-stretch">
-          <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16 space-y-6 text-[#1C1B19]">
-            <span className="text-[9px] font-bold tracking-[0.25em] text-[#8C8276] uppercase block">
+        <div className="w-[80vw] h-[80vh] flex-shrink-0 bg-[#F5F2EB] rounded-3xl border border-[#B0B7C3] shadow-md grid grid-cols-1 lg:grid-cols-2 items-stretch">
+          <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16 space-y-6 text-[#0D3C6A]">
+            <span className="text-[9px] font-bold tracking-[0.25em] text-[#00A896] uppercase block">
               Step 04
             </span>
             <h3 className="font-serif text-2xl sm:text-3xl uppercase tracking-wider">
               Daily Moisturizer
             </h3>
-            <p className="text-xs sm:text-sm text-[#5C554D] leading-relaxed font-light max-w-md">
+            <p className="text-xs sm:text-sm text-[#00A896] leading-relaxed font-light max-w-md">
               A rich daily barrier cream that shields the skin from environmental stressors. Instantly calms redness and smooths textured layers.
             </p>
           </div>
@@ -164,7 +165,7 @@ export default function HorizontalScrollGallery() {
             <div className="relative w-full max-w-[260px] aspect-square drop-shadow-xl">
               <Image 
                 src="/daily-moisturizer.png" 
-                alt="AURA daily moisturizer jar" 
+                alt="GUNALIFE daily moisturizer jar" 
                 fill 
                 sizes="(max-w-768px) 250px, 350px"
                 className="object-contain"
@@ -174,7 +175,7 @@ export default function HorizontalScrollGallery() {
         </div>
 
         {/* CARD 6: Video Panel (Skincare Bottle Loop, 80vw / 80vh) */}
-        <div className="w-[80vw] h-[80vh] flex-shrink-0 relative overflow-hidden bg-black rounded-3xl border border-[#EAE3DC] shadow-md">
+        <div className="w-[80vw] h-[80vh] flex-shrink-0 relative overflow-hidden bg-black rounded-3xl border border-[#B0B7C3] shadow-md">
           <video 
             autoPlay 
             loop 
@@ -184,10 +185,10 @@ export default function HorizontalScrollGallery() {
           >
             <source src="/hero-bg.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#1C1B19]/70 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0D3C6A]/70 via-transparent to-transparent pointer-events-none" />
           <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-4 z-10 text-white space-y-6 pointer-events-none">
             <span className="text-[10px] font-bold tracking-[0.3em] text-white/80 uppercase block">
-              The Aura Pledge
+              The Guna Life Pledge
             </span>
             <h3 className="font-serif text-3xl sm:text-4xl italic font-light tracking-wide leading-tight">
               "Pure Ingredients. <br /> Visible Results."

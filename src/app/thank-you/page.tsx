@@ -28,7 +28,7 @@ export default function ThankYouPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("aura_last_order");
+    const saved = localStorage.getItem("gunalife_last_order");
     if (saved) {
       try {
         setOrder(JSON.parse(saved));
@@ -37,12 +37,12 @@ export default function ThankYouPage() {
       }
     } else {
       // If no last order is recorded, redirect to orders
-      router.push("/orders");
+      router.push("/profile");
     }
   }, [router]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FBF9F6] selection:bg-[#D4C5B9] selection:text-[#1C1B19] relative overflow-x-hidden pt-20">
+    <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#5BA6D6] selection:text-[#0D3C6A] relative overflow-x-hidden pt-20">
       <Header cartItems={[]} onUpdateQuantity={() => {}} onRemoveItem={() => {}} />
 
       <main className="flex-grow max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 select-none text-center flex flex-col items-center justify-center space-y-8">
@@ -56,39 +56,39 @@ export default function ThankYouPage() {
 
         {/* Hero message */}
         <div className="space-y-3">
-          <span className="text-[10px] font-bold tracking-[0.25em] text-[#8C8276] uppercase">
+          <span className="text-[10px] font-bold tracking-[0.25em] text-[#00A896] uppercase">
             Order Confirmed
           </span>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-light text-[#1C1B19] uppercase tracking-wide">
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-light text-[#0D3C6A] uppercase tracking-wide">
             Thank you for your order
           </h1>
-          <p className="text-xs text-[#8C8276] leading-relaxed max-w-md mx-auto">
+          <p className="text-xs text-[#00A896] leading-relaxed max-w-md mx-auto">
             Your transaction has been processed successfully. A confirmation email carrying invoice details will be dispatched to you shortly.
           </p>
         </div>
 
         {order && (
           /* Order detail breakdown card */
-          <div className="w-full bg-white rounded-3xl border border-[#EAE3DC] p-6 sm:p-8 text-left space-y-6 shadow-sm">
+          <div className="w-full bg-white rounded-3xl border border-[#B0B7C3] p-6 sm:p-8 text-left space-y-6 shadow-sm">
             
             {/* Header info */}
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-[#EAE3DC] pb-4 text-xs">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-[#B0B7C3] pb-4 text-xs">
               <div>
-                <span className="text-[#8C8276] block uppercase tracking-wider text-[9px] font-semibold">Order ID</span>
-                <span className="font-bold text-[#1C1B19] text-sm uppercase">{order.orderId}</span>
+                <span className="text-[#00A896] block uppercase tracking-wider text-[9px] font-semibold">Order ID</span>
+                <span className="font-bold text-[#0D3C6A] text-sm uppercase">{order.orderId}</span>
               </div>
               <div className="sm:text-right">
-                <span className="text-[#8C8276] block uppercase tracking-wider text-[9px] font-semibold">Date Placed</span>
-                <span className="font-medium text-[#1C1B19]">{order.date}</span>
+                <span className="text-[#00A896] block uppercase tracking-wider text-[9px] font-semibold">Date Placed</span>
+                <span className="font-medium text-[#0D3C6A]">{order.date}</span>
               </div>
             </div>
 
             {/* List items */}
             <div className="space-y-4 max-h-48 overflow-y-auto scrollbar-none pr-1">
               {order.items.map((item) => (
-                <div key={item.id} className="flex gap-4 items-center justify-between text-xs text-[#1C1B19]">
+                <div key={item.id} className="flex gap-4 items-center justify-between text-xs text-[#0D3C6A]">
                   <div className="flex gap-3 items-center">
-                    <div className="relative w-12 h-12 bg-[#FAF6F0] rounded-xl overflow-hidden border border-[#EAE3DC] p-1 flex items-center justify-center shrink-0">
+                    <div className="relative w-12 h-12 bg-[#FAF6F0] rounded-xl overflow-hidden border border-[#B0B7C3] p-1 flex items-center justify-center shrink-0">
                       <Image
                         src={item.image}
                         alt={item.name}
@@ -99,24 +99,24 @@ export default function ThankYouPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-neutral-800 line-clamp-1">{item.name}</h4>
-                      <p className="text-[10px] text-[#8C8276] uppercase tracking-wider">Qty: {item.quantity}</p>
+                      <p className="text-[10px] text-[#00A896] uppercase tracking-wider">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
 
             {/* Shipping breakdown */}
-            <div className="border-t border-[#EAE3DC] pt-4 text-xs text-left space-y-1">
-              <span className="text-[#8C8276] block uppercase tracking-wider text-[9px] font-semibold">Shipping Address</span>
-              <span className="font-light text-[#1C1B19] leading-relaxed block">{order.shippingAddress}</span>
+            <div className="border-t border-[#B0B7C3] pt-4 text-xs text-left space-y-1">
+              <span className="text-[#00A896] block uppercase tracking-wider text-[9px] font-semibold">Shipping Address</span>
+              <span className="font-light text-[#0D3C6A] leading-relaxed block">{order.shippingAddress}</span>
             </div>
 
             {/* Total line */}
-            <div className="flex justify-between items-baseline border-t border-[#EAE3DC] pt-4 text-xs text-[#1C1B19]">
-              <span className="uppercase font-bold tracking-wider text-[#8C8276]">Total Amount Paid</span>
-              <span className="text-lg font-bold">${order.total.toFixed(2)}</span>
+            <div className="flex justify-between items-baseline border-t border-[#B0B7C3] pt-4 text-xs text-[#0D3C6A]">
+              <span className="uppercase font-bold tracking-wider text-[#00A896]">Total Amount Paid</span>
+              <span className="text-lg font-bold">₹{order.total.toFixed(2)}</span>
             </div>
 
           </div>
@@ -125,8 +125,8 @@ export default function ThankYouPage() {
         {/* Buttons flow triggers */}
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center max-w-md pt-4">
           <button
-            onClick={() => router.push("/orders")}
-            className="flex-1 border border-black text-[#1C1B19] py-3.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-neutral-50 transition-colors"
+            onClick={() => router.push("/profile")}
+            className="flex-1 border border-black text-[#0D3C6A] py-3.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-neutral-50 transition-colors"
           >
             View Order History
           </button>

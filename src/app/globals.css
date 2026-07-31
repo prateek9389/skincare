@@ -4,10 +4,10 @@
   --font-serif: var(--font-playfair), Georgia, serif;
   --font-sans: var(--font-plus-jakarta), system-ui, sans-serif;
   
-  --color-brand-cream: #FBF9F6;
-  --color-brand-charcoal: #1C1B19;
-  --color-brand-beige: #D4C5B9;
-  --color-brand-sand: #EAE3DC;
+  --color-brand-cream: #FFFFFF;
+  --color-brand-charcoal: #0D3C6A;
+  --color-brand-beige: #5BA6D6;
+  --color-brand-sand: #B0B7C3;
   
   --animate-fade-in-up: fade-in-up 0.6s ease-out forwards;
   --animate-marquee: marquee 30s linear infinite;
@@ -34,8 +34,8 @@
 }
 
 :root {
-  --background: #FBF9F6;
-  --foreground: #1C1B19;
+  --background: #FFFFFF;
+  --foreground: #0D3C6A;
 }
 
 body {
@@ -49,13 +49,39 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #FBF9F6;
+  background: #FFFFFF;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D4C5B9;
+  background: #5BA6D6;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #BCAE9E;
 }
 
+@media print {
+  .no-print, header, footer {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+    padding-top: 0 !important;
+  }
+  main {
+    padding-top: 2rem !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -68,7 +68,7 @@ export default function ShopPage() {
 
   // Sync cart with localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("aura_cart");
+    const saved = localStorage.getItem("gunalife_cart");
     if (saved) {
       try {
         setCartItems(JSON.parse(saved));
@@ -76,12 +76,12 @@ export default function ShopPage() {
         console.error("Failed to parse cart items", e);
       }
     }
-    cartLoadedRef.current = true;
+    setTimeout(() => { cartLoadedRef.current = true; }, 100);
   }, []);
 
   useEffect(() => {
     if (cartLoadedRef.current) {
-      localStorage.setItem("aura_cart", JSON.stringify(cartItems));
+      localStorage.setItem("gunalife_cart", JSON.stringify(cartItems));
     }
   }, [cartItems]);
 
@@ -182,7 +182,7 @@ export default function ShopPage() {
   const paginatedProducts = sortedProducts.slice(0, displayCount);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FBF9F6] selection:bg-[#D4C5B9] selection:text-[#1C1B19] relative overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#5BA6D6] selection:text-[#0D3C6A] relative overflow-x-hidden">
       
       {/* Toast Alert */}
       <AnimatePresence>
@@ -191,9 +191,10 @@ export default function ShopPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 right-6 z-50 bg-[#1C1B19] text-white px-6 py-3.5 rounded-xl shadow-xl text-xs tracking-wider uppercase font-semibold flex items-center gap-3 border border-neutral-800"
+            className="fixed bottom-6 right-6 z-50 bg-[#0D3C6A] text-white px-6 py-3.5 rounded-xl shadow-xl text-xs tracking-wider uppercase font-semibold flex items-center gap-3 border border-neutral-800"
           >
-            <span>{toastMessage}</span>
+            <span>Item is in cart</span>
+            <a href="/checkout" className="bg-white text-[#0D3C6A] px-3 py-1.5 rounded-md hover:bg-neutral-200 transition-colors">View Cart</a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -207,9 +208,9 @@ export default function ShopPage() {
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 select-none">
         
         {/* Subtitle Breadcrumb */}
-        <div className="flex justify-between items-center text-[10px] tracking-[0.3em] text-[#8C8276] uppercase mb-8 border-b border-[#EAE3DC] pb-4">
+        <div className="flex justify-between items-center text-[10px] tracking-[0.3em] text-[#00A896] uppercase mb-8 border-b border-[#B0B7C3] pb-4">
           <span>07 CATALOG</span>
-          <span>AURA SKINCARE</span>
+          <span>GUNALIFE SKINCARE</span>
         </div>
 
 
@@ -221,10 +222,10 @@ export default function ShopPage() {
           <aside className="w-full lg:w-64 space-y-6 lg:sticky lg:top-28 shrink-0 text-left">
             
             {/* Category Filter */}
-            <div className="border-b border-[#EAE3DC] pb-4">
+            <div className="border-b border-[#B0B7C3] pb-4">
               <button
                 onClick={() => toggleSection("category")}
-                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#1C1B19] uppercase"
+                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Category</span>
                 <span className="text-sm">{expandedSections.category ? "−" : "+"}</span>
@@ -233,12 +234,12 @@ export default function ShopPage() {
               {expandedSections.category && (
                 <div className="mt-4 space-y-3">
                   {CATEGORIES.map((cat) => (
-                    <label key={cat} className="flex items-center gap-3 text-xs text-[#8C8276] cursor-pointer hover:text-[#1C1B19] select-none">
+                    <label key={cat} className="flex items-center gap-3 text-xs text-[#00A896] cursor-pointer hover:text-[#0D3C6A] select-none">
                       <input
                         type="checkbox"
                         checked={selectedCategories.includes(cat)}
                         onChange={() => toggleCategory(cat)}
-                        className="w-3.5 h-3.5 rounded border-[#D4C5B9] text-[#1C1B19] focus:ring-[#D4C5B9] accent-[#1C1B19]"
+                        className="w-3.5 h-3.5 rounded border-[#5BA6D6] text-[#0D3C6A] focus:ring-[#5BA6D6] accent-[#0D3C6A]"
                       />
                       <span>{cat}</span>
                     </label>
@@ -248,26 +249,26 @@ export default function ShopPage() {
             </div>
 
             {/* Price Filter */}
-            <div className="border-b border-[#EAE3DC] pb-4">
+            <div className="border-b border-[#B0B7C3] pb-4">
               <button
                 onClick={() => toggleSection("price")}
-                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#1C1B19] uppercase"
+                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Price</span>
                 <span className="text-sm">{expandedSections.price ? "−" : "+"}</span>
               </button>
               {expandedSections.price && (
-                <div className="mt-4 space-y-2 text-xs text-[#8C8276] leading-relaxed">
+                <div className="mt-4 space-y-2 text-xs text-[#00A896] leading-relaxed">
                   <p>Filter options are preset to catalog details.</p>
                 </div>
               )}
             </div>
 
             {/* Skin Type Filter */}
-            <div className="border-b border-[#EAE3DC] pb-4">
+            <div className="border-b border-[#B0B7C3] pb-4">
               <button
                 onClick={() => toggleSection("skinType")}
-                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#1C1B19] uppercase"
+                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Skin Type</span>
                 <span className="text-sm">{expandedSections.skinType ? "−" : "+"}</span>
@@ -275,7 +276,7 @@ export default function ShopPage() {
               {expandedSections.skinType && (
                 <div className="mt-4 space-y-2.5">
                   {SKIN_TYPES.map((type) => (
-                    <label key={type} className="flex items-center gap-3 text-xs text-[#8C8276] cursor-pointer hover:text-[#1C1B19]">
+                    <label key={type} className="flex items-center gap-3 text-xs text-[#00A896] cursor-pointer hover:text-[#0D3C6A]">
                       <input
                         type="checkbox"
                         checked={selectedSkinTypes.includes(type)}
@@ -284,7 +285,7 @@ export default function ShopPage() {
                             prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
                           );
                         }}
-                        className="w-3.5 h-3.5 border-[#D4C5B9] accent-[#1C1B19]"
+                        className="w-3.5 h-3.5 border-[#5BA6D6] accent-[#0D3C6A]"
                       />
                       <span>{type} skin</span>
                     </label>
@@ -294,10 +295,10 @@ export default function ShopPage() {
             </div>
 
             {/* Ingredients Filter */}
-            <div className="border-b border-[#EAE3DC] pb-4">
+            <div className="border-b border-[#B0B7C3] pb-4">
               <button
                 onClick={() => toggleSection("ingredients")}
-                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#1C1B19] uppercase"
+                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Ingredients</span>
                 <span className="text-sm">{expandedSections.ingredients ? "−" : "+"}</span>
@@ -306,12 +307,12 @@ export default function ShopPage() {
               {expandedSections.ingredients && (
                 <div className="mt-4 space-y-3">
                   {INGREDIENTS.map((ing) => (
-                    <label key={ing} className="flex items-center gap-3 text-xs text-[#8C8276] cursor-pointer hover:text-[#1C1B19] select-none">
+                    <label key={ing} className="flex items-center gap-3 text-xs text-[#00A896] cursor-pointer hover:text-[#0D3C6A] select-none">
                       <input
                         type="checkbox"
                         checked={selectedIngredients.includes(ing)}
                         onChange={() => toggleIngredient(ing)}
-                        className="w-3.5 h-3.5 rounded border-[#D4C5B9] text-[#1C1B19] focus:ring-[#D4C5B9] accent-[#1C1B19]"
+                        className="w-3.5 h-3.5 rounded border-[#5BA6D6] text-[#0D3C6A] focus:ring-[#5BA6D6] accent-[#0D3C6A]"
                       />
                       <span>{ing}</span>
                     </label>
@@ -321,10 +322,10 @@ export default function ShopPage() {
             </div>
 
             {/* Scent Filter */}
-            <div className="border-b border-[#EAE3DC] pb-4">
+            <div className="border-b border-[#B0B7C3] pb-4">
               <button
                 onClick={() => toggleSection("scent")}
-                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#1C1B19] uppercase"
+                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Scent</span>
                 <span className="text-sm">{expandedSections.scent ? "−" : "+"}</span>
@@ -332,7 +333,7 @@ export default function ShopPage() {
               {expandedSections.scent && (
                 <div className="mt-4 space-y-2.5">
                   {SCENTS.map((scent) => (
-                    <label key={scent} className="flex items-center gap-3 text-xs text-[#8C8276] cursor-pointer hover:text-[#1C1B19]">
+                    <label key={scent} className="flex items-center gap-3 text-xs text-[#00A896] cursor-pointer hover:text-[#0D3C6A]">
                       <input
                         type="checkbox"
                         checked={selectedScents.includes(scent)}
@@ -341,7 +342,7 @@ export default function ShopPage() {
                             prev.includes(scent) ? prev.filter((s) => s !== scent) : [...prev, scent]
                           );
                         }}
-                        className="w-3.5 h-3.5 border-[#D4C5B9] accent-[#1C1B19]"
+                        className="w-3.5 h-3.5 border-[#5BA6D6] accent-[#0D3C6A]"
                       />
                       <span>{scent}</span>
                     </label>
@@ -351,10 +352,10 @@ export default function ShopPage() {
             </div>
 
             {/* Concern Filter */}
-            <div className="border-b border-[#EAE3DC] pb-4">
+            <div className="border-b border-[#B0B7C3] pb-4">
               <button
                 onClick={() => toggleSection("concern")}
-                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#1C1B19] uppercase"
+                className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Concern</span>
                 <span className="text-sm">{expandedSections.concern ? "−" : "+"}</span>
@@ -362,7 +363,7 @@ export default function ShopPage() {
               {expandedSections.concern && (
                 <div className="mt-4 space-y-2.5">
                   {CONCERNS.map((con) => (
-                    <label key={con} className="flex items-center gap-3 text-xs text-[#8C8276] cursor-pointer hover:text-[#1C1B19]">
+                    <label key={con} className="flex items-center gap-3 text-xs text-[#00A896] cursor-pointer hover:text-[#0D3C6A]">
                       <input
                         type="checkbox"
                         checked={selectedConcerns.includes(con)}
@@ -371,7 +372,7 @@ export default function ShopPage() {
                             prev.includes(con) ? prev.filter((c) => c !== con) : [...prev, con]
                           );
                         }}
-                        className="w-3.5 h-3.5 border-[#D4C5B9] accent-[#1C1B19]"
+                        className="w-3.5 h-3.5 border-[#5BA6D6] accent-[#0D3C6A]"
                       />
                       <span>{con}</span>
                     </label>
@@ -397,9 +398,9 @@ export default function ShopPage() {
                 className="bg-black text-white rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6 border border-neutral-950 hover:border-neutral-800 shadow-xl cursor-pointer"
               >
                 <div className="space-y-3 text-left">
-                  <span className="text-[8px] font-bold tracking-[0.2em] text-[#8C8276] uppercase">New Collection</span>
+                  <span className="text-[8px] font-bold tracking-[0.2em] text-[#00A896] uppercase">New Collection</span>
                   <h3 className="font-serif text-2xl text-white font-light leading-tight">New Serums</h3>
-                  <p className="text-[11px] text-[#8C8276] leading-relaxed">
+                  <p className="text-[11px] text-[#00A896] leading-relaxed">
                     Active anti-aging serums targeting skin repair.
                   </p>
                   <span className="inline-block text-[9px] font-bold tracking-widest text-white border-b border-white pb-0.5 uppercase hover:opacity-85">
@@ -427,9 +428,9 @@ export default function ShopPage() {
                 className="bg-black text-white rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6 border border-neutral-950 hover:border-neutral-800 shadow-xl cursor-pointer"
               >
                 <div className="space-y-3 text-left">
-                  <span className="text-[8px] font-bold tracking-[0.2em] text-[#8C8276] uppercase">Bestsellers</span>
+                  <span className="text-[8px] font-bold tracking-[0.2em] text-[#00A896] uppercase">Bestsellers</span>
                   <h3 className="font-serif text-2xl text-white font-light leading-tight">Best Ointment</h3>
-                  <p className="text-[11px] text-[#8C8276] leading-relaxed">
+                  <p className="text-[11px] text-[#00A896] leading-relaxed">
                     Noni treatment using pure botanical extracts.
                   </p>
                   <span className="inline-block text-[9px] font-bold tracking-widest text-white border-b border-white pb-0.5 uppercase hover:opacity-85">
@@ -449,14 +450,14 @@ export default function ShopPage() {
             </div>
             
             {/* Header filters details & Sort */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#EAE3DC]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#B0B7C3]">
               
               {/* Filter breadcrumb tags */}
               <div className="flex flex-wrap gap-2 items-center text-xs">
                 {(selectedCategories.length > 0 || selectedIngredients.length > 0 || selectedSkinTypes.length > 0 || selectedScents.length > 0 || selectedConcerns.length > 0) && (
                   <button
                     onClick={clearAllFilters}
-                    className="text-[10px] font-bold tracking-wider text-[#1C1B19] bg-[#EAE3DC] px-2.5 py-1 rounded uppercase mr-2 hover:opacity-85 transition-opacity"
+                    className="text-[10px] font-bold tracking-wider text-[#0D3C6A] bg-[#B0B7C3] px-2.5 py-1 rounded uppercase mr-2 hover:opacity-85 transition-opacity"
                   >
                     Clear All
                   </button>
@@ -467,7 +468,7 @@ export default function ShopPage() {
                   <span
                     key={cat}
                     onClick={() => toggleCategory(cat)}
-                    className="text-[10px] tracking-wider text-[#1C1B19] border border-[#D4C5B9] px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1.5 cursor-pointer hover:bg-neutral-100"
+                    className="text-[10px] tracking-wider text-[#0D3C6A] border border-[#5BA6D6] px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1.5 cursor-pointer hover:bg-neutral-100"
                   >
                     {cat} <span className="text-[8px] font-bold text-neutral-400">&times;</span>
                   </span>
@@ -478,7 +479,7 @@ export default function ShopPage() {
                   <span
                     key={ing}
                     onClick={() => toggleIngredient(ing)}
-                    className="text-[10px] tracking-wider text-[#1C1B19] border border-[#D4C5B9] px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1.5 cursor-pointer hover:bg-neutral-100"
+                    className="text-[10px] tracking-wider text-[#0D3C6A] border border-[#5BA6D6] px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1.5 cursor-pointer hover:bg-neutral-100"
                   >
                     {ing} <span className="text-[8px] font-bold text-neutral-400">&times;</span>
                   </span>
@@ -486,12 +487,12 @@ export default function ShopPage() {
               </div>
 
               {/* Sort By Dropdown */}
-              <div className="flex items-center gap-2 text-xs text-[#8C8276] self-end sm:self-auto">
+              <div className="flex items-center gap-2 text-xs text-[#00A896] self-end sm:self-auto">
                 <span>SORT BY</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-transparent border-none text-[#1C1B19] font-semibold py-1 pr-6 pl-1 focus:ring-0 cursor-pointer uppercase tracking-wider text-[11px]"
+                  className="bg-transparent border-none text-[#0D3C6A] font-semibold py-1 pr-6 pl-1 focus:ring-0 cursor-pointer uppercase tracking-wider text-[11px]"
                 >
                   <option value="default">Default</option>
                   <option value="price-asc">Price: Low to High</option>
@@ -504,11 +505,11 @@ export default function ShopPage() {
 
             {/* Empty state check */}
             {sortedProducts.length === 0 ? (
-              <div className="text-center py-20 border border-[#EAE3DC] rounded-3xl bg-[#FAF6F0]/40 space-y-4">
-                <p className="font-serif text-lg text-[#1C1B19]">No products match selected filters.</p>
+              <div className="text-center py-20 border border-[#B0B7C3] rounded-3xl bg-[#FAF6F0]/40 space-y-4">
+                <p className="font-serif text-lg text-[#0D3C6A]">No products match selected filters.</p>
                 <button
                   onClick={clearAllFilters}
-                  className="text-xs font-bold tracking-widest text-white bg-[#1C1B19] px-6 py-3 rounded-full uppercase hover:opacity-85"
+                  className="text-xs font-bold tracking-widest text-white bg-[#0D3C6A] px-6 py-3 rounded-full uppercase hover:opacity-85"
                 >
                   Reset All Filters
                 </button>
@@ -523,7 +524,7 @@ export default function ShopPage() {
                       className="group flex flex-col space-y-4 text-left relative"
                     >
                       {/* Product Card Image Container */}
-                      <Link href={`/product/${product.id}`} className="block relative w-full aspect-[4/5] bg-[#FAF6F0] rounded-2xl overflow-hidden p-6 border border-[#EAE3DC]/30 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer">
+                      <Link href={`/product/${product.id}`} className="block relative w-full aspect-[4/5] bg-[#FAF6F0] rounded-2xl overflow-hidden p-6 border border-[#B0B7C3]/30 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer">
                         <Image
                           src={product.image}
                           alt={product.name}
@@ -544,22 +545,22 @@ export default function ShopPage() {
                       <div className="flex flex-col space-y-1">
                         <div className="flex justify-between items-start gap-4">
                           <div className="space-y-0.5">
-                            <span className="text-[9px] uppercase tracking-widest text-[#8C8276] font-semibold">
+                            <span className="text-[9px] uppercase tracking-widest text-[#00A896] font-semibold">
                               {product.category}
                             </span>
                             <Link href={`/product/${product.id}`}>
-                              <h4 className="font-serif text-sm font-light text-[#1C1B19] tracking-wide line-clamp-1 hover:text-black hover:underline transition-colors cursor-pointer">
+                              <h4 className="font-serif text-sm font-light text-[#0D3C6A] tracking-wide line-clamp-1 hover:text-black hover:underline transition-colors cursor-pointer">
                                 {product.name}
                               </h4>
                             </Link>
                           </div>
-                          <span className="font-serif text-sm text-[#1C1B19] font-medium whitespace-nowrap">
-                            {product.price.toFixed(2)} $
+                          <span className="font-serif text-sm text-[#0D3C6A] font-medium whitespace-nowrap">
+                            ₹{product.price.toFixed(2)}
                           </span>
                         </div>
                         
                         {/* Quick details */}
-                        <p className="text-[10px] text-[#8C8276] line-clamp-1 leading-relaxed font-light">
+                        <p className="text-[10px] text-[#00A896] line-clamp-1 leading-relaxed font-light">
                           {product.description}
                         </p>
                       </div>
@@ -568,7 +569,7 @@ export default function ShopPage() {
                       <button
                         onClick={() => handleAddToCart(product)}
                         aria-label="Add to bag"
-                        className="absolute bottom-12 right-4 w-9 h-9 rounded-full bg-white/95 border border-[#EAE3DC] text-[#1C1B19] flex items-center justify-center shadow hover:bg-black hover:text-white hover:border-black transition-all"
+                        className="absolute bottom-12 right-4 w-9 h-9 rounded-full bg-white/95 border border-[#B0B7C3] text-[#0D3C6A] flex items-center justify-center shadow hover:bg-black hover:text-white hover:border-black transition-all"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -579,8 +580,8 @@ export default function ShopPage() {
                 </div>
 
                 {/* Display counter text & pagination */}
-                <div className="flex flex-col items-center pt-8 border-t border-[#EAE3DC] space-y-4">
-                  <span className="text-[10px] tracking-widest text-[#8C8276] uppercase">
+                <div className="flex flex-col items-center pt-8 border-t border-[#B0B7C3] space-y-4">
+                  <span className="text-[10px] tracking-widest text-[#00A896] uppercase">
                     Showing {Math.min(displayCount, sortedProducts.length)} of {sortedProducts.length} items
                   </span>
 

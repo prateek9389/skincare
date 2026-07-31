@@ -1,15 +1,56 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+
+interface FeaturedProduct {
+  id: string;
+  name: string;
+  price: number;
+  mainImage: string;
+}
 
 export default function Hero() {
   const [activeTab, setActiveTab] = useState("Aesthetics");
   const tabs = ["Aesthetics", "Comfort", "Care"];
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const q = query(collection(db, "products"), where("isFeatured", "==", true));
+        const snapshot = await getDocs(q);
+        const products = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          price: doc.data().price,
+          mainImage: doc.data().mainImage,
+        }));
+        setFeaturedProducts(products);
+      } catch (err) {
+        console.error("Failed to fetch featured products", err);
+      }
+    };
+    fetchFeatured();
+  }, []);
+
+  useEffect(() => {
+    if (featuredProducts.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % featuredProducts.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [featuredProducts.length]);
+
+  const currentProduct = featuredProducts[currentIndex];
 
   return (
-    <section className="relative w-full h-[80vh] overflow-hidden bg-zinc-100 flex flex-col justify-end p-6 sm:p-10 lg:p-14 border-b border-[#EAE3DC]">
+    <section className="relative w-full h-[80vh] overflow-hidden bg-zinc-100 flex flex-col justify-end p-6 sm:p-10 lg:p-14 border-b border-[#B0B7C3]">
       {/* Video Background (New 1920x1080 high-def footage) */}
       <video
         autoPlay
@@ -18,12 +59,12 @@ export default function Hero() {
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
       >
-        <source src="/hero-bg.mp4" type="video/mp4" />
+        <source src="/woman_applying_serum_luxury.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
       {/* Premium Linear Gradient Overlay from bottom-left corner for high-end legibility */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-[#FBF9F6]/95 via-[#FBF9F6]/45 to-transparent pointer-events-none z-5" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#FFFFFF]/95 via-[#FFFFFF]/45 to-transparent pointer-events-none z-5" />
 
       {/* BOTTOM ROW: Split Layout for text & floating cards positioned on top of the gradient */}
       <div className="relative z-10 w-full flex flex-col lg:flex-row lg:items-end justify-between gap-8">
@@ -50,12 +91,13 @@ export default function Hero() {
             className="bg-white/95 backdrop-blur-md rounded-2xl p-4 max-w-sm flex items-center gap-4 shadow-lg border border-white/50 transform hover:scale-[1.02] transition-all duration-300"
           >
             <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-zinc-100">
-              <Image
-                src="/hero-inset-model.png"
-                alt="Aura inspiration model"
-                fill
-                sizes="64px"
-                className="object-cover"
+              <video
+                src="/hero-floating-card.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
               />
             </div>
             <div className="space-y-1">
@@ -85,8 +127,8 @@ export default function Hero() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all cursor-pointer ${activeTab === tab
-                    ? "bg-black text-white"
-                    : "bg-white/70 text-black hover:bg-white/95"
+                    ? "bg-[#0D3C6A] text-white"
+                    : "bg-white/70 text-[#0D3C6A] hover:bg-white/95"
                   }`}
               >
                 {tab}
@@ -94,39 +136,61 @@ export default function Hero() {
             ))}
           </div>
 
-          {/* Product details */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <span className="text-[8px] font-bold uppercase tracking-widest text-black/80 block">
-                  [ sale -15% ]
-                </span>
-                <h3 className="font-serif text-sm font-bold text-black tracking-wide uppercase mt-0.5">
-                  Coconut body butter
-                </h3>
+          {/* Product details Carousel */}
+          <div className="space-y-3 relative overflow-hidden">
+            {featuredProducts.length > 0 && currentProduct ? (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentProduct.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-[8px] font-bold uppercase tracking-widest text-[#0D3C6A]/80 block mb-0.5">
+                        [ FEATURED ]
+                      </span>
+                      <Link href={`/product/${currentProduct.id}`} className="hover:underline">
+                        <h3 className="font-serif text-sm font-bold text-[#0D3C6A] tracking-wide uppercase line-clamp-1">
+                          {currentProduct.name}
+                        </h3>
+                      </Link>
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentIndex((prev) => (prev + 1) % featuredProducts.length)}
+                      className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#0D3C6A] hover:bg-[#0D3C6A] hover:text-white transition-colors shadow-xs shrink-0 ml-2"
+                      aria-label="Next Featured Product"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <Link href={`/product/${currentProduct.id}`} className="block w-full aspect-[4/3] bg-white rounded-2xl relative overflow-hidden p-2 flex items-center justify-center border border-white/50 cursor-pointer">
+                    {currentProduct.mainImage ? (
+                      <Image
+                        src={currentProduct.mainImage}
+                        alt={currentProduct.name}
+                        fill
+                        sizes="250px"
+                        className="object-contain p-2 transition-transform duration-500 hover:scale-105"
+                      />
+                    ) : (
+                      <span className="text-xs text-[#BCAE9E]">No Image</span>
+                    )}
+                  </Link>
+                </motion.div>
+              </AnimatePresence>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 opacity-60">
+                <div className="w-6 h-6 border-2 border-[#0D3C6A] border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p className="text-[9px] text-[#0D3C6A] font-bold uppercase tracking-widest text-center">Loading<br/>Featured Products</p>
               </div>
-
-              {/* Top-right link arrow button */}
-              <a
-                href="#products"
-                className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-black hover:bg-black hover:text-white transition-colors shadow-xs"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </a>
-            </div>
-
-            {/* Product image container */}
-            <div className="w-full aspect-[4/3] bg-white rounded-2xl relative overflow-hidden p-2 flex items-center justify-center border border-white/50">
-              <Image
-                src="/coconut-body-butter.png"
-                alt="Coconut body butter packaging"
-                fill
-                sizes="250px"
-                className="object-contain p-2 transition-transform duration-500 hover:scale-105"
-              />
-            </div>
+            )}
           </div>
         </motion.div>
 

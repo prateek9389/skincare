@@ -23,7 +23,7 @@ function ServiceCard({ title, videoSrc, isWhiteBg = false, className = "" }: Ser
   return (
     <motion.div
       variants={cardVariants}
-      className={`relative rounded-3xl overflow-hidden group border border-[#EAE3DC] shadow-xs hover:shadow-lg transition-all duration-500 flex flex-col justify-between p-6 select-none ${
+      className={`relative rounded-3xl overflow-hidden group border border-[#B0B7C3] shadow-xs hover:shadow-lg transition-all duration-500 flex flex-col justify-between p-6 select-none ${
         isWhiteBg ? "bg-white text-black" : "bg-zinc-900 text-white"
       } ${className}`}
     >
@@ -55,7 +55,7 @@ function ServiceCard({ title, videoSrc, isWhiteBg = false, className = "" }: Ser
       <div className="relative z-10 flex justify-end mt-auto">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-xs ${
           isWhiteBg 
-            ? "bg-[#D4C5B9]/20 group-hover:bg-[#1C1B19] text-[#1C1B19] group-hover:text-white" 
+            ? "bg-[#5BA6D6]/20 group-hover:bg-[#0D3C6A] text-[#0D3C6A] group-hover:text-white" 
             : "bg-white/20 group-hover:bg-white text-white group-hover:text-black"
         }`}>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +80,7 @@ export default function ServicesBento() {
 
   return (
     <section 
-      className="w-full py-16 md:py-24 bg-transparent border-b border-[#EAE3DC] overflow-hidden"
+      className="w-full py-16 md:py-24 bg-transparent border-b border-[#B0B7C3] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         

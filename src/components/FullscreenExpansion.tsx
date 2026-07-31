@@ -16,11 +16,11 @@ export default function FullscreenExpansion() {
         
         {/* 1. Header Area */}
         <div className="text-center px-4 space-y-2">
-          <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C8276] uppercase">
+          <span className="text-[10px] font-bold tracking-[0.3em] text-[#00A896] uppercase">
             Featured Collection
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-light tracking-wide">
-            The Aura Cabinet
+            The Guna Life Cabinet
           </h2>
         </div>
 
@@ -50,7 +50,7 @@ export default function FullscreenExpansion() {
                   />
                 </Link>
                 <div className="space-y-1 text-left">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-[#8C8276]">
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-[#00A896]">
                     {product.category}
                   </span>
                   <Link href={`/product/${product.id}`} className="hover:underline">
@@ -63,8 +63,8 @@ export default function FullscreenExpansion() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">${product.price.toFixed(2)}</span>
-                  <span className="text-[8px] font-bold text-[#8C8276] uppercase tracking-wider">Premium</span>
+                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
+                  <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider">Premium</span>
                 </div>
               </div>
             ))}
@@ -85,7 +85,7 @@ export default function FullscreenExpansion() {
                   />
                 </Link>
                 <div className="space-y-1 text-left">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-[#8C8276]">
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-[#00A896]">
                     {product.category}
                   </span>
                   <Link href={`/product/${product.id}`} className="hover:underline">
@@ -98,8 +98,8 @@ export default function FullscreenExpansion() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">${product.price.toFixed(2)}</span>
-                  <span className="text-[8px] font-bold text-[#8C8276] uppercase tracking-wider">Premium</span>
+                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
+                  <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider">Premium</span>
                 </div>
               </div>
             ))}
@@ -109,7 +109,7 @@ export default function FullscreenExpansion() {
 
         {/* 3. Footer area with clean quote */}
         <div className="text-center">
-          <p className="text-xs text-[#8C8276] tracking-widest uppercase font-light max-w-sm mx-auto">
+          <p className="text-xs text-[#00A896] tracking-widest uppercase font-light max-w-sm mx-auto">
             Clean care, curated for your daily wellness.
           </p>
         </div>

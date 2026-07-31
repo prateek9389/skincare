@@ -15,7 +15,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AURA SKINCARE | Pure Ingredients. Visible Results.",
+  title: "GUNALIFE SKINCARE | Pure Ingredients. Visible Results.",
   description: "Thoughtfully formulated skincare that nourishes, protects and enhances your natural glow.",
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="en"
       className={`${playfair.variable} ${plusJakarta.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#FBF9F6] text-[#1C1B19]">
+      <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#0D3C6A]">
         {children}
       </body>
     </html>

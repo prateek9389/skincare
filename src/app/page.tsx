@@ -35,7 +35,7 @@ export default function Home() {
 
   // Sync cart with localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("aura_cart");
+    const saved = localStorage.getItem("gunalife_cart");
     if (saved) {
       try {
         setCartItems(JSON.parse(saved));
@@ -43,12 +43,12 @@ export default function Home() {
         console.error("Failed to parse cart items", e);
       }
     }
-    cartLoadedRef.current = true;
+    setTimeout(() => { cartLoadedRef.current = true; }, 100);
   }, []);
 
   useEffect(() => {
     if (cartLoadedRef.current) {
-      localStorage.setItem("aura_cart", JSON.stringify(cartItems));
+      localStorage.setItem("gunalife_cart", JSON.stringify(cartItems));
     }
   }, [cartItems]);
 
@@ -148,7 +148,7 @@ export default function Home() {
   }, [toastMessage]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FBF9F6] selection:bg-[#D4C5B9] selection:text-[#1C1B19] relative overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#5BA6D6] selection:text-[#0D3C6A] relative overflow-x-hidden">
       {/* Curtain Preloader */}
       <Preloader onComplete={() => {
         setIsLoading(false);
@@ -173,7 +173,7 @@ export default function Home() {
           <motion.path
             d="M 50,0 C 72,15 28,30 72,45 C 28,60 72,75 28,90 L 50,100"
             fill="none"
-            stroke="#D4C5B9"
+            stroke="#5BA6D6"
             strokeWidth="0.12"
             strokeDasharray="0.8 0.8"
             style={{ pathLength }}
@@ -196,11 +196,12 @@ export default function Home() {
 
       {/* Custom Premium Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#1C1B19] text-[#FBF9F6] px-6 py-3.5 rounded-xl shadow-xl text-xs font-bold tracking-wider uppercase flex items-center gap-3 animate-fade-in-up border border-[#5C554D]">
-          <span>{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0D3C6A] text-[#FFFFFF] px-6 py-3.5 rounded-xl shadow-xl text-xs font-bold tracking-wider uppercase flex items-center gap-3 animate-fade-in-up border border-[#00A896]">
+          <span>Item is in cart</span>
+            <a href="/checkout" className="bg-white text-[#0D3C6A] px-3 py-1.5 rounded-md hover:bg-neutral-200 transition-colors">View Cart</a>
           <button
             onClick={() => setToastMessage(null)}
-            className="text-[#8C8276] hover:text-[#FBF9F6] transition-colors ml-2"
+            className="text-[#00A896] hover:text-[#FFFFFF] transition-colors ml-2"
           >
             ✕
           </button>
