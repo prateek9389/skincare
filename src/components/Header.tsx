@@ -82,7 +82,7 @@ export default function Header({
       {/* Top Announcement Bar */}
       <div className="w-full bg-[#0D3C6A] text-[10px] md:text-xs font-medium tracking-widest text-white py-2.5 px-4 transition-all duration-500">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="hidden md:block">USA (USD)</div>
+          <div className="hidden md:block invisible">USA (USD)</div>
           <div className="text-center w-full md:w-auto animate-fade-in">
             {promos[promoIndex]}
           </div>

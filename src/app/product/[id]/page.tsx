@@ -439,7 +439,7 @@ export default function ProductDetailPage() {
                     <span className="text-[9px] tracking-widest text-[#00A896] uppercase">Availability</span>
                     {product.inventory > 0 ? (
                       <span className="text-xs font-bold text-green-700 tracking-wider uppercase flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span> In Stock ({product.inventory})
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span> In Stock
                       </span>
                     ) : (
                       <span className="text-xs font-bold text-red-500 tracking-wider uppercase">Out of Stock</span>

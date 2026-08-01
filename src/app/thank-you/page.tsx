@@ -78,7 +78,7 @@ export default function ThankYouPage() {
                 <span className="font-bold text-[#0D3C6A] text-sm uppercase">{order.orderId}</span>
               </div>
               <div className="sm:text-right">
-                <span className="text-[#00A896] block uppercase tracking-wider text-[9px] font-semibold">Date Placed</span>
+                <span className="text-[#00A896] block uppercase tracking-wider text-[9px] font-semibold">Date & Time</span>
                 <span className="font-medium text-[#0D3C6A]">{order.date}</span>
               </div>
             </div>

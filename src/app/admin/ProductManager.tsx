@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -126,21 +126,21 @@ export default function ProductManager() {
   const filteredProducts = categoryFilter === "All" ? products : products.filter(p => p.category === categoryFilter);
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
     setIsLoading(true);
-    try {
-      const snapshot = await getDocs(collection(db, "products"));
-      const prods = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as FirestoreProduct));
-      setProducts(prods);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const unsub = onSnapshot(
+      collection(db, "products"),
+      (snapshot) => {
+        const prods = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as FirestoreProduct));
+        setProducts(prods);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Failed to listen to products:", error);
+        setIsLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
 
   const generateSlug = (name: string) => {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
@@ -161,7 +161,6 @@ export default function ProductManager() {
       
       alert("Product saved successfully!");
       setIsEditing(false);
-      fetchProducts();
     } catch (err) {
       console.error(err);
       alert("Failed to save product.");
@@ -174,7 +173,6 @@ export default function ProductManager() {
     if (!confirm("Are you sure you want to delete this product?")) return;
     try {
       await deleteDoc(doc(db, "products", id));
-      fetchProducts();
     } catch (err) {
       console.error(err);
     }
@@ -279,7 +277,7 @@ export default function ProductManager() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Price</label>
-                <input required type="number" step="0.01" value={currentProduct.price} onChange={(e) => setCurrentProduct({ ...currentProduct, price: parseFloat(e.target.value) })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
+                <input required type="number" step="0.01" value={currentProduct.price || 0} onChange={(e) => setCurrentProduct({ ...currentProduct, price: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Inventory (Stock Count)</label>
@@ -571,9 +569,12 @@ export default function ProductManager() {
               <div className="p-4 space-y-2 text-left bg-white border-t border-[#B0B7C3]">
                 <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold block">{p.category}</span>
                 <h4 className="text-sm font-semibold text-[#0D3C6A] leading-tight line-clamp-1">{p.name}</h4>
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-end justify-between pt-2">
                   <span className="text-sm font-bold text-[#0D3C6A]">₹{p.price.toFixed(2)}</span>
-                  <span className="text-[8px] font-bold uppercase tracking-widest bg-[#F0FAED] text-green-700 px-2 py-1 rounded-full border border-[#D6EAD2]">Active</span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span className="text-[9px] font-bold text-[#00A896] uppercase tracking-wider">{p.inventory || 0} units</span>
+                    <span className="text-[8px] font-bold uppercase tracking-widest bg-[#F0FAED] text-green-700 px-2 py-1 rounded-full border border-[#D6EAD2]">Active</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -594,6 +595,7 @@ export default function ProductManager() {
                   <th className="p-4 pl-6">Product</th>
                   <th className="p-4">Category</th>
                   <th className="p-4">Price</th>
+                  <th className="p-4">Inventory</th>
                   <th className="p-4 pr-6 text-right">Actions</th>
                 </tr>
               </thead>
@@ -617,6 +619,7 @@ export default function ProductManager() {
                     </td>
                     <td className="p-4 text-xs text-[#00A896]">{prod.category}</td>
                     <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price.toFixed(2)}</td>
+                    <td className="p-4 text-xs font-bold text-[#0D3C6A]">{prod.inventory || 0} units</td>
                     <td className="p-4 pr-6 text-right space-x-3">
                       <button onClick={(e) => { e.stopPropagation(); toggleFeatured(prod); }} className={`text-xs font-bold ${prod.isFeatured ? "text-yellow-500 hover:text-yellow-600" : "text-[#BCAE9E] hover:text-[#0D3C6A]"} transition-colors uppercase tracking-widest`} title={prod.isFeatured ? "Remove from Featured" : "Mark as Featured"}>★</button>
                       <button onClick={(e) => { e.stopPropagation(); openEditor(prod); }} className="text-xs font-bold text-[#BCAE9E] hover:text-[#0D3C6A] transition-colors uppercase tracking-widest">Edit</button>
@@ -626,7 +629,7 @@ export default function ProductManager() {
                 ))}
                 {filteredProducts.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-sm text-[#00A896]">No products found.</td>
+                    <td colSpan={5} className="p-8 text-center text-sm text-[#00A896]">No products found.</td>
                   </tr>
                 )}
               </tbody>

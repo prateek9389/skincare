@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Product, PRODUCTS } from "@/data/products";
@@ -220,6 +220,7 @@ export default function AdminPanel() {
   const [orderFilter, setOrderFilter] = useState<"All" | "Processing" | "Shipped" | "Delivered">("All");
   const [reviewFilter, setReviewFilter] = useState<"All" | "Pending" | "Approved" | "Rejected">("Pending");
   const [productView, setProductView] = useState<"grid" | "list">("grid");
+  const updatingOrdersRef = useRef<Set<string>>(new Set());
 
   // Load data from Firestore
   useEffect(() => {
@@ -297,13 +298,45 @@ export default function AdminPanel() {
   }, [user]);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    if (updatingOrdersRef.current.has(orderId)) return;
+    updatingOrdersRef.current.add(orderId);
+
     const updated = orders.map((o) => (o.orderId === orderId ? { ...o, status: newStatus } : o));
     setOrders(updated);
     try {
-      await setDoc(doc(db, "orders", orderId), { status: newStatus }, { merge: true });
+      const orderRef = doc(db, "orders", orderId);
+      const orderSnap = await getDoc(orderRef);
+      
+      // If the order is already in this status in the database, do not process again
+      if (orderSnap.exists() && orderSnap.data().status === newStatus) {
+        return;
+      }
+
+      await setDoc(orderRef, { status: newStatus }, { merge: true });
+      
+      if (newStatus === "Delivered") {
+        const order = orders.find((o) => o.orderId === orderId);
+        if (order && order.items) {
+          for (const item of order.items) {
+            const prodId = item.productId || item.id;
+            if (prodId) {
+              const prodRef = doc(db, "products", prodId);
+              const prodSnap = await getDoc(prodRef);
+              if (prodSnap.exists()) {
+                const currentInventory = prodSnap.data().inventory || 0;
+                const qtyToDeduct = Number(item.quantity) || 1;
+                const newInventory = Math.max(0, currentInventory - qtyToDeduct);
+                await setDoc(prodRef, { inventory: newInventory }, { merge: true });
+              }
+            }
+          }
+        }
+      }
     } catch (err) {
       console.error("Failed to update status:", err);
       alert("Failed to update order status in database.");
+    } finally {
+      updatingOrdersRef.current.delete(orderId);
     }
   };
 
@@ -617,10 +650,10 @@ export default function AdminPanel() {
         <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-[#B0B7C3] text-center">
           <div className="flex justify-center mb-6">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#BCAE9E] to-[#5BA6D6] flex items-center justify-center font-serif text-[#0D3C6A] font-bold text-xl shadow-inner">
-              A
+              G
             </div>
           </div>
-          <h1 className="font-serif text-2xl text-[#0D3C6A] font-medium uppercase tracking-wider mb-2">AURA Control</h1>
+          <h1 className="font-serif text-2xl text-[#0D3C6A] font-medium uppercase tracking-wider mb-2">GUNA LIFE Control</h1>
           <p className="text-[10px] text-[#00A896] uppercase tracking-widest mb-8">Admin Access Only</p>
 
           <form onSubmit={handleLogin} className="space-y-5 text-left">
@@ -675,9 +708,9 @@ export default function AdminPanel() {
       <aside className="w-64 shrink-0 bg-white border-r border-[#B0B7C3] flex flex-col justify-between p-6">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#BCAE9E] to-[#5BA6D6] flex items-center justify-center font-serif text-[#0D3C6A] font-bold text-sm">A</div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#BCAE9E] to-[#5BA6D6] flex items-center justify-center font-serif text-[#0D3C6A] font-bold text-sm">G</div>
             <div className="text-left flex-1">
-              <h2 className="font-serif text-sm font-bold tracking-widest uppercase text-[#0D3C6A] leading-none">AURA</h2>
+              <h2 className="font-serif text-sm font-bold tracking-widest uppercase text-[#0D3C6A] leading-none">GUNA LIFE</h2>
               <span className="text-[9px] text-[#00A896] uppercase tracking-widest font-semibold block mt-0.5">Control Center</span>
             </div>
           </div>
@@ -718,7 +751,7 @@ export default function AdminPanel() {
         <div className="space-y-4">
           <div className="rounded-2xl bg-gradient-to-br from-[#0D3C6A] to-[#3A362F] p-4 text-left overflow-hidden relative">
             <Award className="w-5 h-5 text-[#5BA6D6] mb-2" />
-            <h4 className="text-[11px] font-serif font-semibold text-white uppercase tracking-wide leading-tight">Aura Pro</h4>
+            <h4 className="text-[11px] font-serif font-semibold text-white uppercase tracking-wide leading-tight">Guna Life Pro</h4>
             <p className="text-[9px] text-[#BCAE9E] mt-1 leading-relaxed">Unlock forecasting & AI restock alerts.</p>
             <button className="mt-3 w-full text-[9px] font-bold uppercase tracking-widest bg-[#BCAE9E] text-[#0D3C6A] py-2 rounded-lg hover:opacity-90 transition-opacity">Upgrade</button>
           </div>
@@ -1349,7 +1382,7 @@ export default function AdminPanel() {
                     <div className="relative pl-6 max-h-[500px] overflow-y-auto scrollbar-none">
                       <div className="absolute left-[9px] top-2 bottom-2 w-px bg-[#B0B7C3]" />
                       {[
-                        { user: "Jane Doe (Super Admin)", action: "Marked order AURA-632190 as Shipped", time: "10 mins ago", tone: "bg-blue-400" },
+                        { user: "Jane Doe (Super Admin)", action: "Marked order GL-632190 as Shipped", time: "10 mins ago", tone: "bg-blue-400" },
                         { user: "System Scheduler", action: "Cleared daily expired caches", time: "1 hour ago", tone: "bg-[#BCAE9E]" },
                         { user: "Ravi Menon (Fulfillment)", action: "Printed 12 shipping labels", time: "2 hours ago", tone: "bg-[#BCAE9E]" },
                         { user: "Jane Doe (Super Admin)", action: "Deactivated discount code SUMMER25", time: "4 hours ago", tone: "bg-amber-400" },

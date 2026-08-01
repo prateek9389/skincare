@@ -184,8 +184,8 @@ export default function CheckoutPage() {
     }
   }
 
-  const standardShippingCost: number = 0.0;
-  const shippingCost: number = 0.0;
+  const standardShippingCost: number = subtotal > 499 ? 0.0 : 50.0;
+  const shippingCost: number = standardShippingCost;
   const taxRate = 0.08; // 8% sales tax
   const taxAmount = (subtotal - discountAmount) * taxRate;
   const grandTotal = subtotal - discountAmount + shippingCost + taxAmount;
@@ -285,10 +285,13 @@ export default function CheckoutPage() {
 
       // 2. Generate Order details
       const orderId = `GUNALIFE-${Math.floor(100000 + Math.random() * 900000)}`;
-      const orderDate = new Date().toLocaleDateString("en-US", {
+      const orderDate = new Date().toLocaleString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
       });
 
       const newOrder = {
