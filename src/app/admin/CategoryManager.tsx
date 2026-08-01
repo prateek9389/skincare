@@ -51,7 +51,7 @@ const ImageUpload = ({ label, value, onChange }: { label: string; value: string;
   );
 };
 
-export default function CategoryManager() {
+export default function CategoryManager({ searchQuery = "" }: { searchQuery?: string }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -161,7 +161,11 @@ export default function CategoryManager() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
-          {categories.map((cat) => (
+          {categories.filter((cat) => {
+          if (!searchQuery) return true;
+          const q = searchQuery.toLowerCase();
+          return cat.name.toLowerCase().includes(q) || cat.description.toLowerCase().includes(q);
+        }).map((cat) => (
             <motion.div key={cat.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white border border-[#B0B7C3] rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col">
               <div className="relative h-48 bg-[#FAF6F0] border-b border-[#B0B7C3] flex items-center justify-center p-4">
                 {cat.image ? (
@@ -186,7 +190,11 @@ export default function CategoryManager() {
               </div>
             </motion.div>
           ))}
-          {categories.length === 0 && (
+          {categories.filter((cat) => {
+          if (!searchQuery) return true;
+          const q = searchQuery.toLowerCase();
+          return cat.name.toLowerCase().includes(q) || cat.description.toLowerCase().includes(q);
+        }).length === 0 && (
             <div className="col-span-full text-center py-20 bg-white border border-[#B0B7C3] rounded-3xl text-sm text-[#00A896]">
               No categories found. Click "Add Category" to create one.
             </div>

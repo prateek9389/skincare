@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Product } from "@/data/products";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, getDocs, collection, query, where, addDoc, serverTimestamp, orderBy } from "firebase/firestore";
 import { FirestoreProduct } from "@/app/admin/ProductManager";
 
@@ -192,6 +192,11 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
+    if (!auth.currentUser) {
+      window.dispatchEvent(new CustomEvent('open-auth-modal'));
+      return;
+    }
+
     setCartItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {

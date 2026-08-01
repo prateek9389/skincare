@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Product, PRODUCTS } from "@/data/products";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { auth } from "@/lib/firebase";
 
 interface CartItem {
   product: Product;
@@ -96,6 +97,11 @@ export default function ShopPage() {
   }, [toastMessage]);
 
   const handleAddToCart = (product: Product) => {
+    if (!auth.currentUser) {
+      window.dispatchEvent(new CustomEvent('open-auth-modal'));
+      return;
+    }
+
     setCartItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {

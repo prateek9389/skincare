@@ -14,6 +14,7 @@ import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 import { Product } from "@/data/products";
 import Lenis from "lenis";
+import { auth } from "@/lib/firebase";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion, useScroll, useSpring } from "framer-motion";
@@ -106,6 +107,11 @@ export default function Home() {
   }, [isLoading]);
 
   const handleAddToCart = (product: Product) => {
+    if (!auth.currentUser) {
+      window.dispatchEvent(new CustomEvent('open-auth-modal'));
+      return;
+    }
+
     setCartItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {

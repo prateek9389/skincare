@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Product, PRODUCTS } from "@/data/products";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
 
 interface CartItem {
   product: Product;
@@ -84,6 +85,11 @@ export default function BestSellersPage() {
   }, [toastMessage]);
 
   const handleAddToCart = (productData: typeof BESTSELLER_TUBE_PRODUCTS[0]) => {
+    if (!auth.currentUser) {
+      window.dispatchEvent(new CustomEvent('open-auth-modal'));
+      return;
+    }
+
     const fullProduct: Product = PRODUCTS.find((p) => p.id === productData.id) || {
       id: productData.id,
       name: productData.name + " - " + productData.description,

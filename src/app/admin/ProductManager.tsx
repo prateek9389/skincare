@@ -108,7 +108,7 @@ const ImageUpload = ({ label, value, onChange }: { label: string; value: string;
   );
 };
 
-export default function ProductManager() {
+export default function ProductManager({ searchQuery = "" }: { searchQuery?: string }) {
   const [products, setProducts] = useState<FirestoreProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -123,7 +123,12 @@ export default function ProductManager() {
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
   const categories = ["All", ...Array.from(new Set(products.map(p => p.category)))];
-  const filteredProducts = categoryFilter === "All" ? products : products.filter(p => p.category === categoryFilter);
+  const filteredByCategory = categoryFilter === "All" ? products : products.filter(p => p.category === categoryFilter);
+  const filteredProducts = filteredByCategory.filter(p => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
+  });
 
   useEffect(() => {
     setIsLoading(true);

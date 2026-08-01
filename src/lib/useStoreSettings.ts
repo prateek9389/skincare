@@ -7,6 +7,14 @@ export interface StoreSettings {
   currency: string;
   supportEmail: string;
   promoText: string;
+  footerBrandDescription: string;
+  footerShopLinks: string;
+  footerCollectionsLinks: string;
+  footerAboutLinks: string;
+  footerHelpLinks: string;
+  footerSocialInstagram: string;
+  footerSocialPinterest: string;
+  footerSocialTiktok: string;
 }
 
 const defaultSettings: StoreSettings = {
@@ -14,6 +22,14 @@ const defaultSettings: StoreSettings = {
   currency: "INR (₹)",
   supportEmail: "support@auraskincare.com",
   promoText: "FREE SHIPPING ON ORDERS OVER ₹499",
+  footerBrandDescription: "Elevated skincare made with clean ingredients and backed by science. We build routines to empower your skin.",
+  footerShopLinks: "All Products|#\nBestsellers|#\nNew Arrivals|#\nSets & Kits|#\nGift Cards|#",
+  footerCollectionsLinks: "Hydration|#\nBrightening|#\nAnti-Aging|#\nSensitive Skin|#\nClear Skin|#",
+  footerAboutLinks: "Our Story|#\nIngredients|#\nSustainability|#\nPress|#\nCareers|#",
+  footerHelpLinks: "FAQ|#\nShipping & Returns|#\nTrack Order|#\nContact Us|#\nPrivacy Policy|#",
+  footerSocialInstagram: "#",
+  footerSocialPinterest: "#",
+  footerSocialTiktok: "#",
 };
 
 export function useStoreSettings() {
@@ -28,12 +44,18 @@ export function useStoreSettings() {
         setSettings(docSnap.data() as StoreSettings);
       } else {
         // Initialize with default settings if it doesn't exist
-        setDoc(docRef, defaultSettings, { merge: true });
+        try {
+          setDoc(docRef, defaultSettings, { merge: true });
+        } catch(e) {
+          console.error("Could not initialize default settings:", e);
+        }
         setSettings(defaultSettings);
       }
       setLoading(false);
     }, (error) => {
       console.error("Error listening to store settings:", error);
+      // Gracefully fallback to default settings on permission error
+      setSettings(defaultSettings);
       setLoading(false);
     });
 

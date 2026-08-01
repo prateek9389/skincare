@@ -6,8 +6,9 @@ import { Product } from "@/data/products";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStoreSettings } from "@/lib/useStoreSettings";
 
@@ -37,6 +38,12 @@ export default function Header({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const handleOpenAuth = () => setIsAuthModalOpen(true);
+    window.addEventListener('open-auth-modal', handleOpenAuth);
+    return () => window.removeEventListener('open-auth-modal', handleOpenAuth);
+  }, []);
+
   const { settings } = useStoreSettings();
 
   const promos = settings.promoText 
@@ -54,9 +61,27 @@ export default function Header({
     return () => clearInterval(timer);
   }, [promos.length]);
 
+  const [profileName, setProfileName] = useState("");
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        setProfileName(currentUser.email || "");
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.firstName || data.lastName) {
+              setProfileName(`${data.firstName || ""} ${data.lastName || ""}`.trim());
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching user profile:", e);
+        }
+      } else {
+        setProfileName("");
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -160,7 +185,7 @@ export default function Header({
                   <div className="absolute right-0 mt-2 w-48 bg-white border border-[#B0B7C3] rounded-xl shadow-xl overflow-hidden py-2 z-50 animate-fade-in text-left text-[#0D3C6A]">
                     <div className="px-4 py-2 border-b border-[#B0B7C3]/50">
                       <p className="text-[10px] uppercase tracking-wider text-[#00A896]">Signed in as</p>
-                      <p className="text-xs font-semibold truncate mt-1">{user.email}</p>
+                      <p className="text-xs font-semibold truncate mt-1">{profileName || user.email}</p>
                     </div>
                     <Link
                       href="/profile"

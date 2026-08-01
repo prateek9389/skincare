@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Product, PRODUCTS } from "@/data/products";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
 
 interface CartItem {
   product: Product;
@@ -84,6 +85,11 @@ export default function CollectionsPage() {
   }, [toastMessage]);
 
   const handleAddToCart = (productData: typeof NEW_LINE_PRODUCTS[0]) => {
+    if (!auth.currentUser) {
+      window.dispatchEvent(new CustomEvent('open-auth-modal'));
+      return;
+    }
+    
     // Find matching full product reference or compile standard product
     const fullProduct: Product = PRODUCTS.find((p) => p.id === productData.id) || {
       id: productData.id,

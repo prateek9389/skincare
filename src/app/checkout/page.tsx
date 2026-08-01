@@ -85,6 +85,8 @@ export default function CheckoutPage() {
       const couponsList = couponsSnap.docs.map(docSnap => ({ ...docSnap.data(), id: docSnap.id } as any));
       const activeCoupons = couponsList.filter(c => c.status === "Active");
       setAvailableCoupons(activeCoupons);
+    }, (error) => {
+      console.error("Error listening to coupons:", error);
     });
 
     // Listen to Auth State
