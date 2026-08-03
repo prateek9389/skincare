@@ -11,6 +11,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 import ProductManager from "./ProductManager";
 import CategoryManager from "./CategoryManager";
+import HeroManager from "./HeroManager";
 import { useStoreSettings } from "@/lib/useStoreSettings";
 
 // ============================================================
@@ -85,6 +86,7 @@ interface OrderDetails {
 
 type SectionType =
   | "Dashboard"
+  | "Hero"
   | "Products"
   | "Categories"
   | "Orders"
@@ -723,6 +725,7 @@ export default function AdminPanel() {
           <nav className="space-y-1">
             {[
               { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard },
+              { id: "Hero", label: "Hero Video", icon: Star },
               { id: "Products", label: "Products", icon: Package },
               { id: "Categories", label: "Categories", icon: Box },
               { id: "Orders", label: "Orders", icon: ShoppingBag },
@@ -988,6 +991,11 @@ export default function AdminPanel() {
                     </div>
                   </div>
                 </>
+              )}
+
+              {/* ============================ HERO ============================ */}
+              {activeSection === "Hero" && (
+                <HeroManager searchQuery={globalSearchQuery} />
               )}
 
               {/* ============================ PRODUCTS ============================ */}
@@ -1350,23 +1358,7 @@ export default function AdminPanel() {
                     </div>
                   </Card>
 
-                  {/* NEW: Team members with avatars */}
-                  <Card className="p-8 space-y-6">
-                    <SectionHeader title="Team Access" subtitle="Manage admin roles and permissions" />
-                    <div className="space-y-3">
-                      {[
-                        { name: "Admin", role: "Super Admin", tone: "green" },
-                        { name: "Ravi Menon", role: "Fulfillment", tone: "blue" },
-                        { name: "Lena Ortiz", role: "Support", tone: "neutral" },
-                      ].map((m) => (
-                        <div key={m.name} className="flex items-center justify-between bg-[#FAF6F0]/50 border border-[#B0B7C3] rounded-xl p-3">
-                          <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#BCAE9E] to-[#5BA6D6] flex items-center justify-center text-[10px] font-bold text-[#0D3C6A]">{m.name.split(" ").map((n) => n[0]).join("")}</div><span className="text-xs font-semibold text-[#0D3C6A]">{m.name}</span></div>
-                          <Pill tone={m.tone as any}>{m.role}</Pill>
-                        </div>
-                      ))}
-                      <button className="w-full flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#0D3C6A] bg-white border border-[#B0B7C3] py-3 rounded-xl hover:border-[#BCAE9E] transition-colors"><Plus className="w-3.5 h-3.5" />Invite Member</button>
-                    </div>
-                  </Card>
+
 
                   {/* Footer Configuration */}
                   <Card className="p-8 space-y-6 lg:col-span-2">

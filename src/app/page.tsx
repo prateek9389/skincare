@@ -204,7 +204,7 @@ export default function Home() {
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#0D3C6A] text-[#FFFFFF] px-6 py-3.5 rounded-xl shadow-xl text-xs font-bold tracking-wider uppercase flex items-center gap-3 animate-fade-in-up border border-[#00A896]">
           <span>Item is in cart</span>
-            <a href="/checkout" className="bg-white text-[#0D3C6A] px-3 py-1.5 rounded-md hover:bg-neutral-200 transition-colors">View Cart</a>
+          <a href="/checkout" className="bg-white text-[#0D3C6A] px-3 py-1.5 rounded-md hover:bg-neutral-200 transition-colors">View Cart</a>
           <button
             onClick={() => setToastMessage(null)}
             className="text-[#00A896] hover:text-[#FFFFFF] transition-colors ml-2"

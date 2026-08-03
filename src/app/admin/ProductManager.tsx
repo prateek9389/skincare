@@ -37,8 +37,9 @@ export interface FirestoreProduct {
     rating: number;
     text: string;
   }>;
-  gallery: string[];
   isFeatured?: boolean;
+  heroCategory?: string;
+  quantities?: { label: string; price: number }[];
 }
 
 const defaultProduct: FirestoreProduct = {
@@ -66,6 +67,8 @@ const defaultProduct: FirestoreProduct = {
   testimonials: [],
   gallery: [],
   isFeatured: false,
+  heroCategory: "Aesthetics",
+  quantities: [],
 };
 
 const ImageUpload = ({ label, value, onChange }: { label: string; value: string; onChange: (url: string) => void }) => {
@@ -293,9 +296,98 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                 <input type="text" value={currentProduct.ingredients.join(", ")} onChange={(e) => setCurrentProduct({ ...currentProduct, ingredients: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" placeholder="Hyaluronic Acid, Vitamin C" />
               </div>
             </div>
-            <div>
+
+            <div className="mt-6 border-t border-[#B0B7C3] pt-6">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest">Quantity / Size Options (Optional)</label>
+                  <p className="text-[10px] text-[#00A896] mt-1">If added, a dropdown will appear on the product page overriding the base price.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCurrentProduct(prev => ({ ...prev, quantities: [...(prev.quantities || []), { label: "", price: 0 }] }))}
+                  className="bg-[#0D3C6A] text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors"
+                >
+                  + Add Option
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {currentProduct.quantities?.map((qty, idx) => (
+                  <div key={idx} className="flex items-center gap-4 bg-[#FAF6F0] p-3 rounded-xl border border-[#B0B7C3]">
+                    <div className="flex-1">
+                      <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Label (e.g., 50ml)</label>
+                      <input 
+                        type="text" 
+                        value={qty.label}
+                        onChange={(e) => {
+                          const newQ = [...(currentProduct.quantities || [])];
+                          newQ[idx].label = e.target.value;
+                          setCurrentProduct({ ...currentProduct, quantities: newQ });
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]" 
+                        placeholder="e.g. 50ml"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Price</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        value={qty.price}
+                        onChange={(e) => {
+                          const newQ = [...(currentProduct.quantities || [])];
+                          newQ[idx].price = parseFloat(e.target.value) || 0;
+                          setCurrentProduct({ ...currentProduct, quantities: newQ });
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]" 
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newQ = [...(currentProduct.quantities || [])];
+                        newQ.splice(idx, 1);
+                        setCurrentProduct({ ...currentProduct, quantities: newQ });
+                      }}
+                      className="mt-4 w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-colors"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-[#B0B7C3] pt-6">
               <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Description</label>
               <textarea required value={currentProduct.description} onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E] min-h-[100px]" />
+            </div>
+
+            <div className="md:col-span-2 mt-4 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#0D3C6A] uppercase tracking-widest">Featured Product (Home Page Video)</label>
+                <p className="text-[10px] text-[#00A896] mt-1">Check this to display this product inside the glass card over the main video on the homepage.</p>
+              </div>
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                {currentProduct.isFeatured && (
+                  <select
+                    value={currentProduct.heroCategory || "Aesthetics"}
+                    onChange={(e) => setCurrentProduct({ ...currentProduct, heroCategory: e.target.value })}
+                    className="flex-grow sm:flex-grow-0 bg-white border border-[#B0B7C3] text-[10px] text-[#0D3C6A] uppercase tracking-widest font-bold px-3 py-2 rounded-lg focus:outline-none focus:border-[#0D3C6A]"
+                  >
+                    <option value="Aesthetics">Aesthetics</option>
+                    <option value="Comfort">Comfort</option>
+                    <option value="Care">Care</option>
+                  </select>
+                )}
+                <input 
+                  type="checkbox" 
+                  checked={currentProduct.isFeatured || false} 
+                  onChange={(e) => setCurrentProduct({ ...currentProduct, isFeatured: e.target.checked, heroCategory: e.target.checked ? (currentProduct.heroCategory || "Aesthetics") : currentProduct.heroCategory })}
+                  className="w-5 h-5 accent-[#0D3C6A] cursor-pointer shrink-0"
+                />
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">

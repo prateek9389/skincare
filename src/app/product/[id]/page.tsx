@@ -50,6 +50,7 @@ export default function ProductDetailPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState<{label: string, price: number} | null>(null);
 
 
   // Top Carousel State
@@ -63,6 +64,9 @@ export default function ProductDetailPage() {
           const prodData = prodDoc.data() as FirestoreProduct;
           setProduct({ ...prodData, id: prodDoc.id });
           setSelectedImage(prodData.mainImage);
+          if (prodData.quantities && prodData.quantities.length > 0) {
+            setSelectedQuantity(prodData.quantities[0]);
+          }
 
           // Fetch approved reviews
           const reviewsQ = query(collection(db, "reviews"), where("productId", "==", prodDoc.id), where("status", "==", "approved"));
@@ -182,9 +186,9 @@ export default function ProductDetailPage() {
 
   // Convert to legacy Product format for the cart
   const legacyProductFormat: Product = {
-    id: product.id,
-    name: product.name,
-    price: product.price,
+    id: selectedQuantity ? `${product.id}-${selectedQuantity.label}` : product.id,
+    name: selectedQuantity ? `${product.name} - ${selectedQuantity.label}` : product.name,
+    price: selectedQuantity ? selectedQuantity.price : product.price,
     image: product.mainImage,
     category: product.category as any,
     description: product.description,
@@ -198,17 +202,17 @@ export default function ProductDetailPage() {
     }
 
     setCartItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const existing = prev.find((item) => item.product.id === legacyProductFormat.id);
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id
+          item.product.id === legacyProductFormat.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
       return [...prev, { product: legacyProductFormat, quantity: 1 }];
     });
-    setToastMessage(`✨ ${product.name} added to bag.`);
+    setToastMessage(`✨ ${legacyProductFormat.name} added to bag.`);
   };
 
 
@@ -435,10 +439,30 @@ export default function ProductDetailPage() {
 
               {/* Price and Cart Action row */}
               <div className="flex flex-col gap-4 py-6 border-y border-[#B0B7C3]">
+                {product.quantities && product.quantities.length > 0 && (
+                  <div className="flex flex-col gap-2 mb-2">
+                    <span className="text-[9px] font-bold tracking-widest text-[#00A896] uppercase">Select Size / Quantity</span>
+                    <select
+                      value={selectedQuantity?.label || ""}
+                      onChange={(e) => {
+                        const opt = product.quantities?.find(q => q.label === e.target.value);
+                        if (opt) setSelectedQuantity(opt);
+                      }}
+                      className="w-full bg-[#FAF6F0] border border-[#B0B7C3] text-sm text-[#0D3C6A] font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-[#0D3C6A] uppercase tracking-wider"
+                    >
+                      {product.quantities.map((q, idx) => (
+                        <option key={idx} value={q.label}>{q.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[9px] tracking-widest text-[#00A896] uppercase">Price</span>
-                    <span className="font-serif text-2xl font-medium text-[#0D3C6A]">₹{product.price.toFixed(2)}</span>
+                    <span className="font-serif text-2xl font-medium text-[#0D3C6A]">
+                      ₹{(selectedQuantity ? selectedQuantity.price : product.price).toFixed(2)}
+                    </span>
                   </div>
                   <div className="text-right flex flex-col">
                     <span className="text-[9px] tracking-widest text-[#00A896] uppercase">Availability</span>
