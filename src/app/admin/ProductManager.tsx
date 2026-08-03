@@ -37,6 +37,7 @@ export interface FirestoreProduct {
     rating: number;
     text: string;
   }>;
+  gallery: string[];
   isFeatured?: boolean;
   heroCategory?: string;
   quantities?: { label: string; price: number }[];
