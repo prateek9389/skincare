@@ -41,6 +41,7 @@ export interface FirestoreProduct {
   isFeatured?: boolean;
   heroCategory?: string;
   quantities?: { label: string; price: number; image?: string }[];
+  _ingredientsString?: string;
 }
 
 const defaultProduct: FirestoreProduct = {
