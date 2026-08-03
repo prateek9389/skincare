@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -120,7 +120,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialEmail = "
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#0D3C6A] focus:outline-none transition-all"
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 />
               </div>
 

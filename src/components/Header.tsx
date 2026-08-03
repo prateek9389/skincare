@@ -49,7 +49,7 @@ export default function Header({
   const promos = settings.promoText 
     ? [settings.promoText, "COMPLIMENTARY SAMPLES WITH EVERY ORDER", "USA (INR) ₹"]
     : [
-        "FREE SHIPPING ON ORDERS OVER ₹499",
+        `FREE SHIPPING ON ORDERS OVER ₹${settings.freeShippingThreshold || 499}`,
         "COMPLIMENTARY SAMPLES WITH EVERY ORDER",
         "USA (INR) ₹",
       ];
@@ -111,7 +111,7 @@ export default function Header({
           <div className="text-center w-full md:w-auto animate-fade-in">
             {promos[promoIndex]}
           </div>
-          <div className="hidden md:block">FREE SHIPPING OVER ₹499</div>
+          <div className="hidden md:block">FREE SHIPPING OVER ₹{settings.freeShippingThreshold || 499}</div>
         </div>
       </div>
 

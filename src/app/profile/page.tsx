@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
@@ -232,7 +232,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-[9px] text-[#BCAE9E] uppercase tracking-widest font-bold mb-1">Total Amount</p>
-                  <p className="text-xs font-bold text-[#0D3C6A]">₹{(order.total || 0).toFixed(2)}</p>
+                  <p className="text-xs font-bold text-[#0D3C6A]">â‚¹{(order.total || 0)}</p>
                 </div>
               </div>
 
@@ -383,7 +383,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-[#0D3C6A] uppercase tracking-wider">{item.product.name}</h3>
-                  <p className="text-[10px] text-[#00A896]">₹{item.product.price.toFixed(2)}</p>
+                  <p className="text-[10px] text-[#00A896]">â‚¹{item.product.price}</p>
                 </div>
               </div>
               
@@ -402,7 +402,7 @@ export default function ProfilePage() {
         </div>
         
         <div className="pt-4 flex justify-between items-center">
-          <p className="font-serif text-lg text-[#0D3C6A]">Total: <span className="font-bold">₹{total.toFixed(2)}</span></p>
+          <p className="font-serif text-lg text-[#0D3C6A]">Total: <span className="font-bold">â‚¹{total}</span></p>
           <Link href="/checkout" className="bg-[#0D3C6A] hover:bg-[#383838] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-md">
             Checkout
           </Link>

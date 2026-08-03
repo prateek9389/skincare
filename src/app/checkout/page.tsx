@@ -11,6 +11,7 @@ import AuthModal from "@/components/AuthModal";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, addDoc, doc, setDoc, getDoc, getDocs, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { useStoreSettings } from "@/lib/useStoreSettings";
 
 interface CartItem {
   product: Product;
@@ -18,6 +19,7 @@ interface CartItem {
 }
 
 export default function CheckoutPage() {
+  const { settings } = useStoreSettings();
   const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const cartLoadedRef = useRef(false);
@@ -39,7 +41,7 @@ export default function CheckoutPage() {
     state: "",
     zipCode: "",
     phone: "",
-    shippingMethod: "standard", // standard (₹0) or express (₹15)
+    shippingMethod: "standard", // standard (â‚¹0) or express (â‚¹15)
     cardNumber: "",
     expiry: "",
     cvv: "",
@@ -186,7 +188,9 @@ export default function CheckoutPage() {
     }
   }
 
-  const standardShippingCost: number = subtotal > 499 ? 0.0 : 50.0;
+  const freeShippingThreshold = settings.freeShippingThreshold || 499;
+  const standardShippingRate = settings.standardShippingRate || 50;
+  const standardShippingCost: number = subtotal > freeShippingThreshold ? 0.0 : standardShippingRate;
   const shippingCost: number = standardShippingCost;
   const taxRate = 0.08; // 8% sales tax
   const taxAmount = (subtotal - discountAmount) * taxRate;
@@ -694,7 +698,7 @@ export default function CheckoutPage() {
                   Apply
                 </button>
               </div>
-              {appliedCoupon && <span className="text-[10px] text-green-600 block">✨ {appliedCoupon.discount} code applied!</span>}
+              {appliedCoupon && <span className="text-[10px] text-green-600 block">âœ¨ {appliedCoupon.discount} code applied!</span>}
               {discountError && <span className="text-[10px] text-red-500 block">{discountError}</span>}
               
               {applicableCouponsForCart.length > 0 && !appliedCoupon && (
@@ -730,7 +734,7 @@ export default function CheckoutPage() {
               <div className="flex justify-between">
                 <span>Shipping</span>
                 <span className="text-[#0D3C6A] font-medium">
-                  {shippingCost === 0 ? "Free Delivery" : `₹${shippingCost.toFixed(2)}`}
+                  {shippingCost === 0 ? "Free Delivery" : `₹${shippingCost}`}
                 </span>
               </div>
               <div className="flex justify-between">

@@ -50,7 +50,7 @@ export default function ProductDetailPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedQuantity, setSelectedQuantity] = useState<{label: string, price: number} | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState<{label: string, price: number, image?: string} | null>(null);
 
 
   // Top Carousel State
@@ -65,7 +65,7 @@ export default function ProductDetailPage() {
           setProduct({ ...prodData, id: prodDoc.id });
           setSelectedImage(prodData.mainImage);
           if (prodData.quantities && prodData.quantities.length > 0) {
-            setSelectedQuantity(prodData.quantities[0]);
+            setSelectedQuantity({ label: "1 Pack", price: prodData.price });
           }
 
           // Fetch approved reviews
@@ -442,18 +442,31 @@ export default function ProductDetailPage() {
                 {product.quantities && product.quantities.length > 0 && (
                   <div className="flex flex-col gap-2 mb-2">
                     <span className="text-[9px] font-bold tracking-widest text-[#00A896] uppercase">Select Size / Quantity</span>
-                    <select
-                      value={selectedQuantity?.label || ""}
-                      onChange={(e) => {
-                        const opt = product.quantities?.find(q => q.label === e.target.value);
-                        if (opt) setSelectedQuantity(opt);
-                      }}
-                      className="w-full bg-[#FAF6F0] border border-[#B0B7C3] text-sm text-[#0D3C6A] font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-[#0D3C6A] uppercase tracking-wider"
-                    >
-                      {product.quantities.map((q, idx) => (
-                        <option key={idx} value={q.label}>{q.label}</option>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                      {[{ label: "1 Pack", price: product.price, image: product.mainImage }, ...product.quantities!].map((opt, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSelectedQuantity(opt);
+                            if (opt.image) {
+                              setSelectedImage(opt.image);
+                            } else {
+                              setSelectedImage(product.mainImage);
+                            }
+                          }}
+                          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
+                            (selectedQuantity?.label || "1 Pack") === opt.label 
+                              ? "border-[#0D3C6A] bg-[#0D3C6A] text-white shadow-md" 
+                              : "border-[#B0B7C3] bg-[#FAF6F0] text-[#0D3C6A] hover:border-[#5BA6D6] hover:bg-white"
+                          }`}
+                        >
+                          <span className={`text-[10px] uppercase tracking-widest font-bold mb-1 ${
+                            (selectedQuantity?.label || "1 Pack") === opt.label ? "text-[#5BA6D6]" : "text-[#00A896]"
+                          }`}>{opt.label}</span>
+                          <span className="font-serif text-sm">₹{opt.price}</span>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 )}
                 

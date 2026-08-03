@@ -396,7 +396,7 @@ export default function AdminPanel() {
   const conversionRate = adminStats.conversionRate;
   const bounceRate = adminStats.bounceRate;
   const returnRate = adminStats.returnRate;
-  const avgOrderValue = totalOrdersCount > 0 ? (totalRevenue / totalOrdersCount).toFixed(2) : "0.00";
+  const avgOrderValue = totalOrdersCount > 0 ? (totalRevenue / totalOrdersCount) : "0.00";
 
   // Shipping Stats
   const inTransitCount = orders.filter(o => o.status === "Shipped").length;
@@ -509,7 +509,7 @@ export default function AdminPanel() {
   const totalCustomersCalculated = customersList.length;
   const newThisMonthCalculated = customersList.filter(c => c.isNew).length;
   const goldMembersCalculated = customersList.filter(c => c.tier === "Gold Member").length;
-  const avgLtvCalculated = customersList.length > 0 ? (customersList.reduce((acc, c) => acc + c.ltv, 0) / customersList.length).toFixed(2) : "0.00";
+  const avgLtvCalculated = customersList.length > 0 ? (customersList.reduce((acc, c) => acc + c.ltv, 0) / customersList.length) : "0.00";
 
   const monthlyTargetAmount = 100000;
   const calculatedMonthlyTargetPct = useMemo(() => {
@@ -690,7 +690,7 @@ export default function AdminPanel() {
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E] transition-colors"
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               />
             </div>
 
@@ -970,7 +970,7 @@ export default function AdminPanel() {
                                   <td className="py-3 flex items-center gap-3"><div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] overflow-hidden shrink-0 border border-[#5BA6D6] p-0.5"><Image src={p.image} alt={p.name} fill sizes="32px" className="object-contain" /></div><span className="font-medium text-[#0D3C6A] line-clamp-1">{p.name}</span></td>
                                   <td className="py-3 uppercase text-[10px] tracking-wider text-[#00A896] font-medium">{p.category}</td>
                                   <td className="py-3"><Pill tone="green">In Stock</Pill></td>
-                                  <td className="py-3 font-semibold text-[#0D3C6A]">₹{p.price.toFixed(2)}</td>
+                                  <td className="py-3 font-semibold text-[#0D3C6A]">₹{p.price}</td>
                                 </tr>
                               );
                             })}
@@ -984,7 +984,7 @@ export default function AdminPanel() {
                         {recentOrders.length > 0 ? recentOrders.map((o) => (
                           <div key={o.orderId} onClick={() => setSelectedOrder(o)} className="flex justify-between items-center text-xs border-b border-[#B0B7C3]/50 pb-3 last:border-0 last:pb-0 cursor-pointer hover:bg-[#FAF6F0] p-2 -mx-2 rounded-xl transition-colors">
                             <div className="space-y-0.5"><span className="font-bold text-[#0D3C6A] uppercase">{o.orderId}</span><span className="text-[10px] text-[#00A896] block uppercase tracking-wider">{o.date}</span></div>
-                            <div className="text-right space-y-1"><span className="font-semibold text-[#0D3C6A] block">₹{o.total.toFixed(2)}</span><span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span></div>
+                            <div className="text-right space-y-1"><span className="font-semibold text-[#0D3C6A] block">₹{o.total}</span><span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span></div>
                           </div>
                         )) : <div className="text-xs text-[#00A896] text-center mt-4">No recent orders found</div>}
                       </div>
@@ -1043,11 +1043,11 @@ export default function AdminPanel() {
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 border-b border-[#B0B7C3]/60">
                           <div className="flex items-center gap-4">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${o.status === "Delivered" ? "bg-green-50 text-green-600" : o.status === "Shipped" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"}`}>{o.status === "Delivered" ? <Package className="w-5 h-5" /> : o.status === "Shipped" ? <Truck className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}</div>
-                            <div className="text-left"><h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">{o.orderId}</h4><span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} • ` : ""}{o.date}</span></div>
+                            <div className="text-left"><h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">{o.orderId}</h4><span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} â€¢ ` : ""}{o.date}</span></div>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className={`inline-block text-[9px] font-bold uppercase px-3 py-1.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span>
-                            <span className="text-lg font-bold text-[#0D3C6A]">₹{o.total.toFixed(2)}</span>
+                            <span className="text-lg font-bold text-[#0D3C6A]">₹{o.total}</span>
                           </div>
                         </div>
                         <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -1057,7 +1057,7 @@ export default function AdminPanel() {
                               {o.items.map((item, iIdx) => {
                                 const matchedProduct = PRODUCTS.find((pp) => pp.id === (item.productId || item.id));
                                 const imgSrc = matchedProduct ? matchedProduct.image : item.image;
-                                return (<div key={iIdx} className="flex items-center gap-2 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl p-2 pr-4"><div className="relative w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 border border-[#B0B7C3] p-0.5">{imgSrc && <Image src={imgSrc} alt={item.name} fill sizes="40px" className="object-contain" />}</div><div className="text-left"><span className="text-xs font-semibold text-[#0D3C6A] block leading-tight">{item.name}</span><span className="text-[9px] text-[#00A896]">Qty: {item.quantity} • ₹{item.price.toFixed(2)}</span></div></div>);
+                                return (<div key={iIdx} className="flex items-center gap-2 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl p-2 pr-4"><div className="relative w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 border border-[#B0B7C3] p-0.5">{imgSrc && <Image src={imgSrc} alt={item.name} fill sizes="40px" className="object-contain" />}</div><div className="text-left"><span className="text-xs font-semibold text-[#0D3C6A] block leading-tight">{item.name}</span><span className="text-[9px] text-[#00A896]">Qty: {item.quantity} â€¢ ₹{item.price}</span></div></div>);
                               })}
                             </div>
                           </div>
@@ -1066,7 +1066,7 @@ export default function AdminPanel() {
                             <div className="flex gap-2">
                               {o.status !== "Shipped" && o.status !== "Delivered" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Shipped")} className="flex-1 py-2.5 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider border border-blue-200 hover:bg-blue-100 transition-colors">Mark Shipped</button>)}
                               {o.status !== "Delivered" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Delivered")} className="flex-1 py-2.5 rounded-xl bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-wider border border-green-200 hover:bg-green-100 transition-colors">Mark Delivered</button>)}
-                              {o.status === "Delivered" && (<span className="flex-1 py-2.5 rounded-xl bg-[#FAF6F0] text-[#00A896] text-[10px] font-bold uppercase tracking-wider text-center border border-[#B0B7C3]">✓ Fulfilled</span>)}
+                              {o.status === "Delivered" && (<span className="flex-1 py-2.5 rounded-xl bg-[#FAF6F0] text-[#00A896] text-[10px] font-bold uppercase tracking-wider text-center border border-[#B0B7C3]">{"\u2713"} FULFILLED</span>)}
                             </div>
                           </div>
                         </div>
@@ -1131,7 +1131,7 @@ export default function AdminPanel() {
                               <td className="py-4 font-semibold text-[#0D3C6A] flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#BCAE9E] flex items-center justify-center text-[10px] font-bold text-[#0D3C6A]">{c.name.split(" ").map((n: string) => n[0]).join("")}</div>{c.name}</td>
                               <td className="py-4 text-[#00A896] font-medium">{c.email}</td>
                               <td className="py-4">{c.ordersCount} Orders</td>
-                              <td className="py-4 font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(2)}</td>
+                              <td className="py-4 font-bold text-[#0D3C6A]">₹{c.ltv}</td>
                               <td className="py-4"><Pill tone={c.tone as any}>{c.tier}</Pill></td>
                             </tr>
                           ))}
@@ -1180,7 +1180,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="space-y-4">
                       {topRegionsList.length > 0 ? topRegionsList.map((r) => (
-                        <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
+                        <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â€¢ {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
                       )) : (
                         <div className="text-xs text-[#0D3C6A]">No regional data available yet.</div>
                       )}
@@ -1252,7 +1252,7 @@ export default function AdminPanel() {
                         <span className="text-[10px] text-[#00A896] uppercase tracking-wider block mt-2">Based on 1,284 reviews</span>
                       </div>
                       <div className="md:col-span-2 space-y-2">
-                        {[{ s: 5, pct: 82 }, { s: 4, pct: 12 }, { s: 3, pct: 4 }, { s: 2, pct: 1 }, { s: 1, pct: 1 }].map((r) => (<div key={r.s} className="flex items-center gap-3"><span className="text-[10px] font-bold text-[#00A896] w-6">{r.s}★</span><div className="flex-1 h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-amber-400" style={{ width: `${r.pct}%` }} /></div><span className="text-[10px] text-[#00A896] w-8 text-right">{r.pct}%</span></div>))}
+                        {[{ s: 5, pct: 82 }, { s: 4, pct: 12 }, { s: 3, pct: 4 }, { s: 2, pct: 1 }, { s: 1, pct: 1 }].map((r) => (<div key={r.s} className="flex items-center gap-3"><span className="text-[10px] font-bold text-[#00A896] w-6">{r.s}â˜…</span><div className="flex-1 h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-amber-400" style={{ width: `${r.pct}%` }} /></div><span className="text-[10px] text-[#00A896] w-8 text-right">{r.pct}%</span></div>))}
                       </div>
                     </div>
                   </Card>
@@ -1276,7 +1276,7 @@ export default function AdminPanel() {
                               <div><span className="font-bold text-[#0D3C6A] text-sm block">{r.clientName}</span><span className="text-[9px] text-[#00A896] uppercase tracking-wider">{r.productName}</span></div>
                               <Pill tone={r.status === "approved" ? "green" : r.status === "rejected" ? "red" : "amber"}>{r.status}</Pill>
                             </div>
-                            <div className="flex items-center gap-2 mt-1"><span className="text-amber-500 text-xs">{"★".repeat(r.rating)}<span className="text-[#B0B7C3]">{"★".repeat(5 - r.rating)}</span></span><span className="text-[9px] text-[#00A896]">{r.dateStr}</span></div>
+                            <div className="flex items-center gap-2 mt-1"><span className="text-amber-500 text-xs">{"â˜…".repeat(r.rating)}<span className="text-[#B0B7C3]">{"â˜…".repeat(5 - r.rating)}</span></span><span className="text-[9px] text-[#00A896]">{r.dateStr}</span></div>
                           </div>
                         </div>
                         <p className="text-xs text-[#0D3C6A]/80 leading-relaxed font-light">{r.comment}</p>
@@ -1327,7 +1327,7 @@ export default function AdminPanel() {
                                   <span className="text-[10px] text-[#00A896]">In Transit</span>
                                 </div>
                                 <span className="text-[10px] text-[#00A896] flex items-center gap-1 mt-0.5">
-                                  <Truck className="w-3 h-3" /> Standard Shipping → {city}
+                                  <Truck className="w-3 h-3" /> Standard Shipping â†’ {city}
                                 </span>
                                 <div className="w-full h-1.5 bg-[#B0B7C3] rounded-full overflow-hidden mt-2">
                                   <div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `50%` }} />
@@ -1354,6 +1354,8 @@ export default function AdminPanel() {
                       <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Store Currency</label><input type="text" value={formSettings.currency} onChange={e => setFormSettings({...formSettings, currency: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
                       <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Support Contact Email</label><input type="email" value={formSettings.supportEmail} onChange={e => setFormSettings({...formSettings, supportEmail: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
                       <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Announcement Promo Text</label><input type="text" value={formSettings.promoText} onChange={e => setFormSettings({...formSettings, promoText: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
+                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Free Shipping Threshold</label><input type="number" value={formSettings.freeShippingThreshold} onChange={e => setFormSettings({...formSettings, freeShippingThreshold: Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
+                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Standard Shipping Rate</label><input type="number" value={formSettings.standardShippingRate} onChange={e => setFormSettings({...formSettings, standardShippingRate: Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
                       <button onClick={handleSaveSettings} className="w-full bg-[#BCAE9E] text-black font-bold text-xs uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-md hover:opacity-90">Save configurations</button>
                     </div>
                   </Card>
@@ -1457,7 +1459,9 @@ export default function AdminPanel() {
         {selectedOrder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setSelectedOrder(null)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-[#FAF6F0] text-[#00A896] hover:bg-[#0D3C6A] hover:text-white transition-colors">✕</button>
+              <button onClick={() => setSelectedOrder(null)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-[#FAF6F0] text-[#00A896] hover:bg-[#0D3C6A] hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
 
               <h2 className="font-serif text-2xl text-[#0D3C6A] uppercase tracking-wider border-b border-[#B0B7C3] pb-4 mb-6">Order {selectedOrder.orderId}</h2>
 
@@ -1487,7 +1491,7 @@ export default function AdminPanel() {
                       <p className="text-xs font-bold text-[#0D3C6A] truncate">{item.name}</p>
                       <p className="text-[10px] text-[#00A896] uppercase tracking-widest">Qty: {item.quantity}</p>
                     </div>
-                    <span className="text-sm font-bold text-[#0D3C6A] shrink-0">₹{(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="text-sm font-bold text-[#0D3C6A] shrink-0">₹{(item.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>
@@ -1509,7 +1513,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="text-right w-full sm:w-auto bg-[#FAF6F0] p-4 rounded-xl border border-[#B0B7C3]">
                   <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-1">Grand Total</p>
-                  <p className="text-xl font-bold text-[#0D3C6A]">₹{selectedOrder.total.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-[#0D3C6A]">₹{selectedOrder.total}</p>
                 </div>
               </div>
             </div>

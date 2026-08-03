@@ -111,7 +111,7 @@ export default function CollectionsPage() {
       }
       return [...prev, { product: fullProduct, quantity: 1 }];
     });
-    setToastMessage(`✨ Added ${fullProduct.name} to bag.`);
+    setToastMessage(`âœ¨ Added ${fullProduct.name} to bag.`);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -271,14 +271,17 @@ export default function CollectionsPage() {
                     {product.description}
                   </p>
                   <div className="flex justify-between items-center pt-2">
-                    <span className="font-serif text-sm font-medium text-[#0D3C6A]">
-                      {product.price.toFixed(0)}$
+                    <span className="text-sm font-bold text-[#0D3C6A]">
+                      ₹{product.price.toFixed(2)}
                     </span>
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="text-[9px] font-bold tracking-widest text-[#0D3C6A] border-b border-[#0D3C6A] pb-0.5 uppercase hover:opacity-75"
+                      className="w-8 h-8 rounded-full border border-[#0D3C6A]/30 flex items-center justify-center text-[#0D3C6A] hover:bg-[#0D3C6A] hover:text-white transition-colors"
+                      title="Add to cart"
                     >
-                      Add to cart
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -349,10 +352,10 @@ export default function CollectionsPage() {
                 </h3>
                 <div className="space-y-4 text-xs text-[#00A896] leading-relaxed font-light">
                   <p>
-                    We stand for clean, ethical and conscious beauty. Our cosmetics are made with natural ingredients, responsibly sourced and never tested on animals. We care about what goes on your skin and how it affects the planet. Beauty should be kind — to you and to the world around.
+                    We stand for clean, ethical and conscious beauty. Our cosmetics are made with natural ingredients, responsibly sourced and never tested on animals. We care about what goes on your skin and how it affects the planet. Beauty should be kind â€” to you and to the world around.
                   </p>
                   <p>
-                    We dont test on animals and choose sustainable solutions at every step — from sourcing to packaging. Each formula is inspired by the simplicity of nature, designed to nurture both your skin and the planet.
+                    We dont test on animals and choose sustainable solutions at every step â€” from sourcing to packaging. Each formula is inspired by the simplicity of nature, designed to nurture both your skin and the planet.
                   </p>
                 </div>
               </div>

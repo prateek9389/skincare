@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
@@ -102,7 +102,7 @@ export default function ThankYouPage() {
                       <p className="text-[10px] text-[#00A896] uppercase tracking-wider">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-semibold">â‚¹{(item.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -116,7 +116,7 @@ export default function ThankYouPage() {
             {/* Total line */}
             <div className="flex justify-between items-baseline border-t border-[#B0B7C3] pt-4 text-xs text-[#0D3C6A]">
               <span className="uppercase font-bold tracking-wider text-[#00A896]">Total Amount Paid</span>
-              <span className="text-lg font-bold">₹{order.total.toFixed(2)}</span>
+              <span className="text-lg font-bold">â‚¹{order.total}</span>
             </div>
 
           </div>

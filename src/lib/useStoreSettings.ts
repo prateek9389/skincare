@@ -15,6 +15,8 @@ export interface StoreSettings {
   footerSocialInstagram: string;
   footerSocialPinterest: string;
   footerSocialTiktok: string;
+  freeShippingThreshold: number;
+  standardShippingRate: number;
 }
 
 const defaultSettings: StoreSettings = {
@@ -30,6 +32,8 @@ const defaultSettings: StoreSettings = {
   footerSocialInstagram: "#",
   footerSocialPinterest: "#",
   footerSocialTiktok: "#",
+  freeShippingThreshold: 499,
+  standardShippingRate: 50,
 };
 
 export function useStoreSettings() {

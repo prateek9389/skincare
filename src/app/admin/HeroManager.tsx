@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
@@ -123,7 +123,7 @@ export default function HeroManager({ searchQuery = "" }: { searchQuery?: string
           </AnimatePresence>
           {featuredInActiveTab.length === 0 && (
             <div className="col-span-full p-8 text-center text-xs text-[#00A896] border border-dashed border-[#B0B7C3] rounded-2xl bg-[#FAF6F0] flex flex-col items-center justify-center">
-              <span className="text-2xl mb-2 block">📭</span>
+              <span className="text-2xl mb-2 block">ðŸ“­</span>
               No products currently featured in {activeTab}.<br/> Click "+ Add Product" to add one.
             </div>
           )}

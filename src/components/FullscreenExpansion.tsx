@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Image from "next/image";
@@ -63,7 +63,7 @@ export default function FullscreenExpansion() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-white">â‚¹{product.price}</span>
                   <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider">Premium</span>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export default function FullscreenExpansion() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-white">â‚¹{product.price}</span>
                   <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider">Premium</span>
                 </div>
               </div>

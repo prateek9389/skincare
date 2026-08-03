@@ -7,7 +7,9 @@ import Image from "next/image";
 import { Product, PRODUCTS } from "@/data/products";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import { FirestoreProduct } from "@/app/admin/ProductManager";
 
 interface CartItem {
   product: Product;
@@ -53,6 +55,18 @@ export default function ShopPage() {
   
   // Sort state
   const [sortBy, setSortBy] = useState<string>("default");
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Expandable sections in sidebar
   const [expandedSections, setExpandedSections] = useState({
@@ -113,7 +127,7 @@ export default function ShopPage() {
       }
       return [...prev, { product, quantity: 1 }];
     });
-    setToastMessage(`✨ ${product.name} added to bag.`);
+    setToastMessage(`âœ¨ ${product.name} added to bag.`);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -161,8 +175,31 @@ export default function ShopPage() {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
+  // Load dynamic products
+  const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "products"), (snap) => {
+      const prods: Product[] = snap.docs.map(doc => {
+        const data = doc.data() as FirestoreProduct;
+        return {
+          id: data.id || doc.id,
+          name: data.name || "Unknown Product",
+          category: data.category || "Skincare",
+          price: Number(data.price) || 0,
+          description: data.description || "",
+          image: data.mainImage || "/placeholder.png",
+          tag: data.isFeatured ? "HIT" : undefined,
+          ingredients: data.ingredients || []
+        };
+      });
+      setDynamicProducts(prods);
+    }, (err) => console.error("Failed to load shop page products", err));
+    return () => unsub();
+  }, []);
+
   // Filter and Sort logic
-  const filteredProducts = PRODUCTS.filter((product) => {
+  const sourceProducts = dynamicProducts.length > 0 ? dynamicProducts : PRODUCTS;
+  const filteredProducts = sourceProducts.filter((product) => {
     // Category check
     if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
       return false;
@@ -234,7 +271,9 @@ export default function ShopPage() {
                 className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Category</span>
-                <span className="text-sm">{expandedSections.category ? "−" : "+"}</span>
+                <svg className={`w-4 h-4 transition-transform duration-200 ${expandedSections.category ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               
               {expandedSections.category && (
@@ -261,7 +300,9 @@ export default function ShopPage() {
                 className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Price</span>
-                <span className="text-sm">{expandedSections.price ? "−" : "+"}</span>
+                <svg className={`w-4 h-4 transition-transform duration-200 ${expandedSections.price ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               {expandedSections.price && (
                 <div className="mt-4 space-y-2 text-xs text-[#00A896] leading-relaxed">
@@ -277,7 +318,9 @@ export default function ShopPage() {
                 className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Skin Type</span>
-                <span className="text-sm">{expandedSections.skinType ? "−" : "+"}</span>
+                <svg className={`w-4 h-4 transition-transform duration-200 ${expandedSections.skinType ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               {expandedSections.skinType && (
                 <div className="mt-4 space-y-2.5">
@@ -307,7 +350,9 @@ export default function ShopPage() {
                 className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Ingredients</span>
-                <span className="text-sm">{expandedSections.ingredients ? "−" : "+"}</span>
+                <svg className={`w-4 h-4 transition-transform duration-200 ${expandedSections.ingredients ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               
               {expandedSections.ingredients && (
@@ -334,7 +379,9 @@ export default function ShopPage() {
                 className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Scent</span>
-                <span className="text-sm">{expandedSections.scent ? "−" : "+"}</span>
+                <svg className={`w-4 h-4 transition-transform duration-200 ${expandedSections.scent ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               {expandedSections.scent && (
                 <div className="mt-4 space-y-2.5">
@@ -364,7 +411,9 @@ export default function ShopPage() {
                 className="w-full flex justify-between items-center text-xs font-bold tracking-widest text-[#0D3C6A] uppercase"
               >
                 <span>Concern</span>
-                <span className="text-sm">{expandedSections.concern ? "−" : "+"}</span>
+                <svg className={`w-4 h-4 transition-transform duration-200 ${expandedSections.concern ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               {expandedSections.concern && (
                 <div className="mt-4 space-y-2.5">
@@ -493,18 +542,50 @@ export default function ShopPage() {
               </div>
 
               {/* Sort By Dropdown */}
-              <div className="flex items-center gap-2 text-xs text-[#00A896] self-end sm:self-auto">
+              <div className="flex items-center gap-2 text-xs text-[#00A896] self-end sm:self-auto relative" ref={sortRef}>
                 <span>SORT BY</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-transparent border-none text-[#0D3C6A] font-semibold py-1 pr-6 pl-1 focus:ring-0 cursor-pointer uppercase tracking-wider text-[11px]"
+                <div 
+                  className="bg-transparent text-[#0D3C6A] font-semibold py-1 pr-1 cursor-pointer uppercase tracking-wider text-[11px] flex items-center justify-between min-w-[130px] border-b border-transparent hover:border-[#B0B7C3] transition-colors"
+                  onClick={() => setIsSortOpen(!isSortOpen)}
                 >
-                  <option value="default">Default</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="name-asc">Name: A-Z</option>
-                </select>
+                  {sortBy === 'default' ? 'Default' : 
+                   sortBy === 'price-asc' ? 'Price: Low to High' :
+                   sortBy === 'price-desc' ? 'Price: High to Low' :
+                   sortBy === 'name-asc' ? 'Name: A-Z' : 'Default'}
+                  <svg className={`w-3.5 h-3.5 ml-2 transition-transform duration-200 ${isSortOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                
+                <AnimatePresence>
+                  {isSortOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full right-0 mt-2 w-48 bg-[#FAF6F0] border border-[#B0B7C3]/60 shadow-xl z-50 rounded-2xl overflow-hidden"
+                    >
+                      {[
+                        { value: 'default', label: 'Default' },
+                        { value: 'price-asc', label: 'Price: Low to High' },
+                        { value: 'price-desc', label: 'Price: High to Low' },
+                        { value: 'name-asc', label: 'Name: A-Z' }
+                      ].map(option => (
+                        <div
+                          key={option.value}
+                          onClick={() => {
+                            setSortBy(option.value);
+                            setIsSortOpen(false);
+                          }}
+                          className={`px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors border-b border-[#B0B7C3]/20 last:border-0 ${sortBy === option.value ? 'bg-white text-[#00A896]' : 'text-[#0D3C6A] hover:bg-white/60'}`}
+                        >
+                          {option.label}
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
             </div>
@@ -548,39 +629,36 @@ export default function ShopPage() {
                       </Link>
 
                       {/* Details row */}
-                      <div className="flex flex-col space-y-1">
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="space-y-0.5">
-                            <span className="text-[9px] uppercase tracking-widest text-[#00A896] font-semibold">
-                              {product.category}
-                            </span>
-                            <Link href={`/product/${product.id}`}>
-                              <h4 className="font-serif text-sm font-light text-[#0D3C6A] tracking-wide line-clamp-1 hover:text-black hover:underline transition-colors cursor-pointer">
-                                {product.name}
-                              </h4>
-                            </Link>
-                          </div>
-                          <span className="font-serif text-sm text-[#0D3C6A] font-medium whitespace-nowrap">
-                            ₹{product.price.toFixed(2)}
+                      <div className="flex flex-col space-y-2">
+                        <div className="space-y-0.5 text-left">
+                          <span className="text-[9px] uppercase tracking-widest text-[#00A896] font-semibold">
+                            {product.category}
                           </span>
+                          <Link href={`/product/${product.id}`} className="block">
+                            <h4 className="font-serif text-sm font-semibold text-[#0D3C6A] tracking-wide line-clamp-1 hover:text-black hover:underline transition-colors cursor-pointer">
+                              {product.name}
+                            </h4>
+                          </Link>
+                          <p className="text-[10px] text-[#00A896] line-clamp-1 leading-relaxed font-light">
+                            {product.description}
+                          </p>
                         </div>
                         
-                        {/* Quick details */}
-                        <p className="text-[10px] text-[#00A896] line-clamp-1 leading-relaxed font-light">
-                          {product.description}
-                        </p>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-sm font-bold text-[#0D3C6A] whitespace-nowrap">
+                            ₹{product.price.toFixed(2)}
+                          </span>
+                          <button
+                            onClick={() => handleAddToCart(product)}
+                            aria-label="Add to bag"
+                            className="w-8 h-8 rounded-full bg-white/95 border border-[#B0B7C3] text-[#0D3C6A] flex items-center justify-center shadow hover:bg-black hover:text-white hover:border-black transition-all"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-
-                      {/* Circular add to cart overlay trigger */}
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        aria-label="Add to bag"
-                        className="absolute bottom-12 right-4 w-9 h-9 rounded-full bg-white/95 border border-[#B0B7C3] text-[#0D3C6A] flex items-center justify-center shadow hover:bg-black hover:text-white hover:border-black transition-all"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                      </button>
                     </div>
                   ))}
                 </div>

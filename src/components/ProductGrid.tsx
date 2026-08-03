@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { PRODUCTS, Product } from "@/data/products";
 import Link from "next/link";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { FirestoreProduct } from "@/app/admin/ProductManager";
 
 interface ProductGridProps {
   onAddToCart: (product: Product) => void;
@@ -160,10 +163,34 @@ const HorizontalProductCarousel = ({
 };
 
 export default function ProductGrid({ onAddToCart }: ProductGridProps) {
+  const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "products"), (snap) => {
+      const prods: Product[] = snap.docs.map(doc => {
+        const data = doc.data() as FirestoreProduct;
+        return {
+          id: data.id || doc.id,
+          name: data.name || "Unknown Product",
+          category: data.category || "Skincare",
+          price: Number(data.price) || 0,
+          description: data.description || "",
+          image: data.mainImage || "/placeholder.png",
+          tag: data.isFeatured ? "HIT" : undefined,
+        };
+      });
+      setDynamicProducts(prods);
+    }, (err) => console.error("Failed to load home page products", err));
+    return () => unsub();
+  }, []);
+
+  // Use dynamic products if available, fallback to mock PRODUCTS
+  const sourceProducts = dynamicProducts.length > 0 ? dynamicProducts : PRODUCTS;
+
   // Group the products based on tags/categories to populate 3 sections
-  const bestSellers = PRODUCTS.slice(0, 6);
-  const featured = PRODUCTS.filter((p) => p.tag === "HIT");
-  const essentials = PRODUCTS.filter((p) => ["Cleansers", "Moisturizers", "Toners"].includes(p.category)).slice(0, 6);
+  const bestSellers = sourceProducts.slice(0, 6);
+  const featured = sourceProducts.filter((p) => p.tag === "HIT");
+  const essentials = sourceProducts.filter((p) => ["Cleansers", "Moisturizers", "Toners", "Skincare"].includes(p.category)).slice(0, 6);
 
   return (
     <section id="shop-sections" className="w-full flex flex-col">

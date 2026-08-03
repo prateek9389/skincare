@@ -35,7 +35,7 @@ export default function Footer() {
               </div>
               <div>
                 <h4 className="text-xs font-bold tracking-wider uppercase text-white">Free Shipping</h4>
-                <p className="text-[11px] text-neutral-300 tracking-wide mt-0.5">On all domestic orders over ₹499</p>
+                <p className="text-[11px] text-neutral-300 tracking-wide mt-0.5">On all domestic orders over ₹{settings.freeShippingThreshold || 499}</p>
               </div>
             </div>
 
@@ -151,7 +151,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-neutral-900 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-neutral-300 tracking-widest uppercase">
-          <p>© {new Date().getFullYear()} {settings.brandName}. All rights reserved.</p>
+          <p>Â© {new Date().getFullYear()} {settings.brandName}. All rights reserved.</p>
           <div className="flex space-x-6">
             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
             <span>|</span>

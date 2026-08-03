@@ -16,7 +16,7 @@ export const PRODUCTS: Product[] = [
     category: "Cleansers",
     description: "Gentle daily cleanser for all skin types",
     price: 32.00,
-    image: "/cream-cleanser.png",
+    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=600&auto=format&fit=crop",
     ingredients: ["Salicylic acid", "Vitamin E"]
   },
   {
@@ -25,7 +25,7 @@ export const PRODUCTS: Product[] = [
     category: "Serums",
     description: "Brightening & hydrating vitamin C serum",
     price: 48.00,
-    image: "/radiance-serum.png",
+    image: "https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=600&auto=format&fit=crop",
     ingredients: ["Vitamin C", "Hyaluronic acid"]
   },
   {
@@ -34,7 +34,7 @@ export const PRODUCTS: Product[] = [
     category: "Moisturizers",
     description: "Nourishing moisturizer for healthy skin barrier",
     price: 36.00,
-    image: "/daily-moisturizer.png",
+    image: "https://images.unsplash.com/photo-1608248593840-2e3eb8c6c8ce?q=80&w=600&auto=format&fit=crop",
     ingredients: ["Hyaluronic acid", "Niacinamide"]
   },
   {
@@ -43,7 +43,7 @@ export const PRODUCTS: Product[] = [
     category: "Sun Care",
     description: "Broad spectrum SPF 50 for daily protection",
     price: 28.00,
-    image: "/mineral-sunscreen.png",
+    image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=600&auto=format&fit=crop",
     ingredients: ["Vitamin E"]
   },
   {
@@ -51,8 +51,8 @@ export const PRODUCTS: Product[] = [
     name: "Niacinamide Toner",
     category: "Toners",
     description: "Pore refining & balancing daily toner",
-    price: 26.00,
-    image: "/niacinamide-toner.png",
+    price: 30.00,
+    image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?q=80&w=600&auto=format&fit=crop",
     ingredients: ["Niacinamide", "Salicylic acid"]
   },
   {
@@ -99,8 +99,8 @@ export const PRODUCTS: Product[] = [
     name: "Premium CBD Oil",
     category: "Serums",
     description: "Calming face oil with active hemp botanical extracts",
-    price: 25.00,
-    image: "/radiance-serum.png",
+    price: 18.00,
+    image: "https://images.unsplash.com/photo-1629198725970-7b5871f9801b?q=80&w=600&auto=format&fit=crop",
     ingredients: ["Vitamin E"]
   },
   {
@@ -108,8 +108,8 @@ export const PRODUCTS: Product[] = [
     name: "Coconut Body Butter",
     category: "Body Care",
     description: "Deeply moisturizing whipped body butter",
-    price: 8.00,
-    image: "/coconut-body-butter.png",
+    price: 24.00,
+    image: "https://images.unsplash.com/photo-1629198688000-71f23e745b6e?q=80&w=600&auto=format&fit=crop",
     ingredients: ["Lactic acid", "Vitamin E"]
   },
   {
@@ -117,8 +117,8 @@ export const PRODUCTS: Product[] = [
     name: "Peeling Gel",
     category: "Cleansers",
     description: "Gentle exfoliating gel with natural AHAs",
-    price: 20.00,
-    image: "/category-cleansers.png",
-    ingredients: ["Lactic acid", "Salicylic acid"]
+    price: 42.00,
+    image: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?q=80&w=600&auto=format&fit=crop",
+    ingredients: ["Hyaluronic acid", "Retinol"]
   }
 ];

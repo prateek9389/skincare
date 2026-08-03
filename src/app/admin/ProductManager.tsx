@@ -40,7 +40,7 @@ export interface FirestoreProduct {
   gallery: string[];
   isFeatured?: boolean;
   heroCategory?: string;
-  quantities?: { label: string; price: number }[];
+  quantities?: { label: string; price: number; image?: string }[];
 }
 
 const defaultProduct: FirestoreProduct = {
@@ -165,7 +165,12 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
         return;
       }
       
-      const prodToSave = { ...currentProduct, id: prodId };
+      const prodToSave = { 
+        ...currentProduct, 
+        id: prodId,
+        price: Number(currentProduct.price) || 0,
+        inventory: Number(currentProduct.inventory) || 0
+      };
       await setDoc(doc(db, "products", prodId), prodToSave);
       
       alert("Product saved successfully!");
@@ -262,8 +267,19 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
         <div className="flex justify-between items-center mb-8 border-b border-[#B0B7C3] pb-4">
           <h2 className="font-serif text-2xl text-[#0D3C6A]">{currentProduct.id ? "Edit Product" : "Create Product"}</h2>
           <div className="flex items-center gap-4">
-            <button type="button" onClick={() => setIsAiModalOpen(true)} className="flex items-center gap-2 bg-[#FAF6F0] text-[#00A896] border border-[#B0B7C3] hover:border-[#00A896] px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors">
-              ✨ Auto-Fill with AI
+            <button type="button" onClick={() => setIsAiModalOpen(true)} className="flex items-center gap-2 bg-[#FAF6F0] text-[#00A896] border border-[#B0B7C3] hover:border-[#00A896] hover:shadow-md px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="aiSparkle" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#FCD34D" />
+                    <stop offset="100%" stopColor="#F97316" />
+                  </linearGradient>
+                </defs>
+                <path d="M10.5 2L12 8L18 9.5L12 11L10.5 17L9 11L3 9.5L9 8L10.5 2Z" fill="url(#aiSparkle)"/>
+                <path d="M18.5 14L19.25 16.5L22 17.25L19.25 18L18.5 20.5L17.75 18L15 17.25L17.75 16.5L18.5 14Z" fill="url(#aiSparkle)"/>
+                <path d="M4.5 16L5 17.5L6.5 18L5 18.5L4.5 20L4 18.5L2.5 18L4 17.5L4.5 16Z" fill="url(#aiSparkle)"/>
+              </svg>
+              Auto-Fill with AI
             </button>
             <button onClick={() => setIsEditing(false)} className="text-xs text-[#00A896] hover:text-[#0D3C6A] uppercase tracking-widest font-bold">
               Cancel
@@ -286,23 +302,75 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Price</label>
-                <input required type="number" step="0.01" value={currentProduct.price || 0} onChange={(e) => setCurrentProduct({ ...currentProduct, price: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
+                <input required type="number" step="0.01" value={currentProduct.price === 0 && currentProduct.name === "" ? "" : currentProduct.price} onChange={(e) => setCurrentProduct({ ...currentProduct, price: e.target.value as any })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Inventory (Stock Count)</label>
-                <input required type="number" min="0" value={currentProduct.inventory || 0} onChange={(e) => setCurrentProduct({ ...currentProduct, inventory: parseInt(e.target.value) || 0 })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
+                <input required type="number" min="0" value={currentProduct.inventory === 0 && currentProduct.name === "" ? "" : currentProduct.inventory} onChange={(e) => setCurrentProduct({ ...currentProduct, inventory: e.target.value as any })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Ingredients (comma separated)</label>
-                <input type="text" value={currentProduct.ingredients.join(", ")} onChange={(e) => setCurrentProduct({ ...currentProduct, ingredients: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" placeholder="Hyaluronic Acid, Vitamin C" />
+                <input type="text" value={(currentProduct as any)._ingredientsString ?? currentProduct.ingredients.join(", ")} onChange={(e) => setCurrentProduct({ ...currentProduct, _ingredientsString: e.target.value, ingredients: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" placeholder="Hyaluronic Acid, Vitamin C" />
               </div>
             </div>
 
             <div className="mt-6 border-t border-[#B0B7C3] pt-6">
-              <div className="flex justify-between items-center mb-4">
+              <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Multi-Pack Pricing (Optional)</label>
+              <p className="text-[10px] text-[#00A896] mb-4">Quickly add standard multi-pack options. Entering a price will automatically add it to the product.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {[2, 3, 4].map(num => {
+                  const label = `Pack of ${num}`;
+                  const existingQty = currentProduct.quantities?.find(q => q.label === label);
+                  return (
+                    <div key={num} className="bg-[#FAF6F0] p-4 rounded-xl border border-[#B0B7C3] flex flex-col gap-4">
+                      <div>
+                        <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">{label} Price</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={existingQty?.price || ""}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            let newQ = [...(currentProduct.quantities || [])];
+                            if (isNaN(val) || val <= 0) {
+                              newQ = newQ.filter(q => q.label !== label);
+                            } else {
+                              const existing = newQ.find(q => q.label === label);
+                              if (existing) existing.price = val;
+                              else newQ.push({ label, price: val });
+                            }
+                            setCurrentProduct({ ...currentProduct, quantities: newQ });
+                          }}
+                          className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]"
+                          placeholder="Leave blank to disable"
+                        />
+                      </div>
+                      {existingQty && (
+                        <div className="border-t border-[#BCAE9E] pt-3">
+                          <ImageUpload
+                            label={`${label} Image`}
+                            value={existingQty.image || ""}
+                            onChange={(url) => {
+                              let newQ = [...(currentProduct.quantities || [])];
+                              const existing = newQ.find(q => q.label === label);
+                              if (existing) {
+                                existing.image = url;
+                                setCurrentProduct({ ...currentProduct, quantities: newQ });
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex justify-between items-center mb-4 pt-4 border-t border-[#B0B7C3]/50">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest">Quantity / Size Options (Optional)</label>
-                  <p className="text-[10px] text-[#00A896] mt-1">If added, a dropdown will appear on the product page overriding the base price.</p>
+                  <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest">Custom Size / Quantity Options</label>
+                  <p className="text-[10px] text-[#00A896] mt-1">Add custom options like "50ml", "100ml".</p>
                 </div>
                 <button
                   type="button"
@@ -598,7 +666,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setIsAiModalOpen(false)} disabled={isAiGenerating} className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#BCAE9E] hover:text-[#0D3C6A]">Cancel</button>
                 <button type="button" onClick={handleAiGenerate} disabled={isAiGenerating || !aiPrompt.trim()} className="bg-[#0D3C6A] text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-black disabled:opacity-50 flex items-center gap-2">
-                  {isAiGenerating ? "Generating..." : "✨ Generate"}
+                  {isAiGenerating ? "Generating..." : "âœ¨ Generate"}
                 </button>
               </div>
             </div>
@@ -659,16 +727,16 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                   <div className="text-[10px] text-[#00A896] font-bold uppercase tracking-widest">No Image</div>
                 )}
                 <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={(e) => { e.stopPropagation(); toggleFeatured(p); }} className={`w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] ${p.isFeatured ? "text-yellow-500" : "text-[#0D3C6A]"} hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs`} title={p.isFeatured ? "Remove from Featured" : "Mark as Featured"}>★</button>
-                  <button onClick={(e) => { e.stopPropagation(); openEditor(p); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] text-[#0D3C6A] hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs" title="Edit">✎</button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-red-100 text-red-500 hover:bg-red-500 hover:text-white transition-colors text-xs" title="Delete">×</button>
+                  <button onClick={(e) => { e.stopPropagation(); toggleFeatured(p); }} className={`w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] ${p.isFeatured ? "text-yellow-500" : "text-[#0D3C6A]"} hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs`} title={p.isFeatured ? "Remove from Featured" : "Mark as Featured"}>â˜…</button>
+                  <button onClick={(e) => { e.stopPropagation(); openEditor(p); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] text-[#0D3C6A] hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs" title="Edit">âœŽ</button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-red-100 text-red-500 hover:bg-red-500 hover:text-white transition-colors text-xs" title="Delete">Ã—</button>
                 </div>
               </div>
               <div className="p-4 space-y-2 text-left bg-white border-t border-[#B0B7C3]">
                 <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold block">{p.category}</span>
                 <h4 className="text-sm font-semibold text-[#0D3C6A] leading-tight line-clamp-1">{p.name}</h4>
                 <div className="flex items-end justify-between pt-2">
-                  <span className="text-sm font-bold text-[#0D3C6A]">₹{p.price.toFixed(2)}</span>
+                  <span className="text-sm font-bold text-[#0D3C6A]">₹{p.price}</span>
                   <div className="flex flex-col items-end gap-1.5">
                     <span className="text-[9px] font-bold text-[#00A896] uppercase tracking-wider">{p.inventory || 0} units</span>
                     <span className="text-[8px] font-bold uppercase tracking-widest bg-[#F0FAED] text-green-700 px-2 py-1 rounded-full border border-[#D6EAD2]">Active</span>
@@ -716,10 +784,10 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                       </div>
                     </td>
                     <td className="p-4 text-xs text-[#00A896]">{prod.category}</td>
-                    <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price.toFixed(2)}</td>
+                    <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price}</td>
                     <td className="p-4 text-xs font-bold text-[#0D3C6A]">{prod.inventory || 0} units</td>
                     <td className="p-4 pr-6 text-right space-x-3">
-                      <button onClick={(e) => { e.stopPropagation(); toggleFeatured(prod); }} className={`text-xs font-bold ${prod.isFeatured ? "text-yellow-500 hover:text-yellow-600" : "text-[#BCAE9E] hover:text-[#0D3C6A]"} transition-colors uppercase tracking-widest`} title={prod.isFeatured ? "Remove from Featured" : "Mark as Featured"}>★</button>
+                      <button onClick={(e) => { e.stopPropagation(); toggleFeatured(prod); }} className={`text-xs font-bold ${prod.isFeatured ? "text-yellow-500 hover:text-yellow-600" : "text-[#BCAE9E] hover:text-[#0D3C6A]"} transition-colors uppercase tracking-widest`} title={prod.isFeatured ? "Remove from Featured" : "Mark as Featured"}>â˜…</button>
                       <button onClick={(e) => { e.stopPropagation(); openEditor(prod); }} className="text-xs font-bold text-[#BCAE9E] hover:text-[#0D3C6A] transition-colors uppercase tracking-widest">Edit</button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete(prod.id); }} className="text-xs font-bold text-red-400 hover:text-red-600 transition-colors uppercase tracking-widest">Delete</button>
                     </td>

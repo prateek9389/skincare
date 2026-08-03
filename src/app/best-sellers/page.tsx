@@ -110,7 +110,7 @@ export default function BestSellersPage() {
       }
       return [...prev, { product: fullProduct, quantity: 1 }];
     });
-    setToastMessage(`✨ Added ${fullProduct.name} to bag.`);
+    setToastMessage(`âœ¨ Added ${fullProduct.name} to bag.`);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -269,8 +269,8 @@ export default function BestSellersPage() {
                     {product.description}
                   </p>
                   <div className="flex justify-between items-center pt-2">
-                    <span className="font-serif text-sm font-medium text-[#0D3C6A]">
-                      {product.price.toFixed(0)}$
+                    <span className="text-sm font-bold text-[#0D3C6A]">
+                      ₹{product.price.toFixed(2)}
                     </span>
                     <button
                       onClick={() => handleAddToCart(product)}
@@ -347,10 +347,10 @@ export default function BestSellersPage() {
                 </h3>
                 <div className="space-y-4 text-xs text-[#00A896] leading-relaxed font-light">
                   <p>
-                    We stand for clean, ethical and conscious beauty. Our cosmetics are made with natural ingredients, responsibly sourced and never tested on animals. We care about what goes on your skin and how it affects the planet. Beauty should be kind — to you and to the world around.
+                    We stand for clean, ethical and conscious beauty. Our cosmetics are made with natural ingredients, responsibly sourced and never tested on animals. We care about what goes on your skin and how it affects the planet. Beauty should be kind â€” to you and to the world around.
                   </p>
                   <p>
-                    We dont test on animals and choose sustainable solutions at every step — from sourcing to packaging. Each formula is inspired by the simplicity of nature, designed to nurture both your skin and the planet.
+                    We dont test on animals and choose sustainable solutions at every step â€” from sourcing to packaging. Each formula is inspired by the simplicity of nature, designed to nurture both your skin and the planet.
                   </p>
                 </div>
               </div>

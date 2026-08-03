@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
@@ -124,7 +124,7 @@ export default function Home() {
       return [...prev, { product, quantity: 1 }];
     });
 
-    setToastMessage(`✨ ${product.name} added to bag.`);
+    setToastMessage(`âœ¨ ${product.name} added to bag.`);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -209,7 +209,7 @@ export default function Home() {
             onClick={() => setToastMessage(null)}
             className="text-[#00A896] hover:text-[#FFFFFF] transition-colors ml-2"
           >
-            ✕
+            âœ•
           </button>
         </div>
       )}
