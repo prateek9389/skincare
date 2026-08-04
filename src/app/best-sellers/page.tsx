@@ -110,7 +110,7 @@ export default function BestSellersPage() {
       }
       return [...prev, { product: fullProduct, quantity: 1 }];
     });
-    setToastMessage(`âœ¨ Added ${fullProduct.name} to bag.`);
+    setToastMessage(`✨ Added ${fullProduct.name} to bag.`);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -168,7 +168,7 @@ export default function BestSellersPage() {
 
             <div className="space-y-6 my-auto">
               <div className="relative w-28 h-28 bg-[#FAF6F0] rounded-2xl overflow-hidden p-2 border border-[#B0B7C3] shadow-inner">
-                <Image
+                <Image data-pin-nopin="true"
                   src="/category-moisturizers.png"
                   alt="Catalog Preview"
                   fill
@@ -251,7 +251,7 @@ export default function BestSellersPage() {
                     idx === 2 ? "bg-green-500" : "bg-blue-500"
                   }`} />
                   
-                  <Image
+                  <Image data-pin-nopin="true"
                     src={product.image}
                     alt={product.name}
                     fill
@@ -306,7 +306,7 @@ export default function BestSellersPage() {
 
             {/* Overlapping/Floating Dropper bottle in the dead center */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-72 z-20 pointer-events-none drop-shadow-2xl">
-              <Image
+              <Image data-pin-nopin="true"
                 src="/radiance-serum.png"
                 alt="Floating Serene Dropper"
                 fill
@@ -324,7 +324,7 @@ export default function BestSellersPage() {
             
             {/* Left Box: Smiling model photo */}
             <div className="relative rounded-3xl overflow-hidden min-h-[400px] border border-[#B0B7C3]">
-              <Image
+              <Image data-pin-nopin="true"
                 src="/instagram-models.png"
                 alt="Serene Philosophy Model"
                 fill
@@ -375,7 +375,7 @@ export default function BestSellersPage() {
                 className="flex items-center gap-6 bg-[#FAF6F0] border border-[#B0B7C3]/60 px-8 py-4 rounded-2xl cursor-pointer hover:border-[#0D3C6A]/30 transition-colors"
               >
                 <div className="relative w-12 h-12 bg-white rounded-lg overflow-hidden p-1 border border-[#B0B7C3]">
-                  <Image
+                  <Image data-pin-nopin="true"
                     src={product.image}
                     alt={product.name}
                     fill

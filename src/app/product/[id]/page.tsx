@@ -306,7 +306,7 @@ export default function ProductDetailPage() {
                 {/* Left Column */}
                 <div className="relative h-full hidden md:block border-r border-[#B0B7C3]/80 overflow-hidden bg-[#FAF6F0]">
                   {currentSlideData.leftImage && (
-                    <Image
+                    <Image data-pin-nopin="true"
                       src={currentSlideData.leftImage}
                       alt="Left Image"
                       fill
@@ -347,7 +347,7 @@ export default function ProductDetailPage() {
                 {/* Right Column */}
                 <div className="relative h-full overflow-hidden bg-white/50">
                   {currentSlideData.rightImage && (
-                    <Image
+                    <Image data-pin-nopin="true"
                       src={currentSlideData.rightImage}
                       alt="Right Image"
                       fill
@@ -389,7 +389,7 @@ export default function ProductDetailPage() {
                       onClick={() => setSelectedImage(img)}
                       className={`relative w-20 h-20 md:h-24 rounded-xl border overflow-hidden shrink-0 transition-colors ${selectedImage === img ? 'border-[#0D3C6A]' : 'border-[#B0B7C3]/60 hover:border-[#5BA6D6]'}`}
                     >
-                      <Image src={img} alt={`Gallery ${idx}`} fill sizes="80px" className="object-cover" />
+                      <Image data-pin-nopin="true" src={img} alt={`Gallery ${idx}`} fill sizes="80px" className="object-cover" />
                     </button>
                   ))}
                 </div>
@@ -398,7 +398,7 @@ export default function ProductDetailPage() {
               {/* Main Image View */}
               <div className="bg-[#FAF6F0] rounded-3xl border border-[#B0B7C3]/60 relative aspect-square shadow-sm flex-grow group overflow-hidden">
                 {(selectedImage || product.mainImage) && (
-                  <Image
+                  <Image data-pin-nopin="true"
                     src={selectedImage || product.mainImage}
                     alt={product.name}
                     fill
@@ -510,7 +510,7 @@ export default function ProductDetailPage() {
                 {/* Smeared cream texture picture */}
                 {product.textureImage && (
                   <div className="relative aspect-[3/1] w-full bg-[#FAF6F0] rounded-2xl border border-[#B0B7C3]/40 overflow-hidden mt-6 p-2 flex items-center justify-center">
-                    <Image
+                    <Image data-pin-nopin="true"
                       src={product.textureImage}
                       alt="Texture"
                       fill
@@ -537,7 +537,7 @@ export default function ProductDetailPage() {
                   <div key={item.id} onClick={() => router.push(`/product/${item.id}`)} className="snap-start shrink-0 w-[240px] group flex flex-col space-y-4 text-left cursor-pointer">
                     <div className="relative aspect-[4/5] bg-[#FAF6F0] rounded-2xl overflow-hidden p-4 border border-[#B0B7C3]/40 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow">
                       {item.mainImage && (
-                        <Image src={item.mainImage} alt={item.name} fill sizes="240px" className="object-contain p-2 opacity-95 group-hover:scale-102 transition-transform duration-500" />
+                        <Image data-pin-nopin="true" src={item.mainImage} alt={item.name} fill sizes="240px" className="object-contain p-2 opacity-95 group-hover:scale-102 transition-transform duration-500" />
                       )}
                     </div>
                     <div className="flex justify-between items-baseline gap-2">
@@ -562,7 +562,7 @@ export default function ProductDetailPage() {
                   <div key={item.id} onClick={() => router.push(`/product/${item.id}`)} className="snap-start shrink-0 w-[240px] group flex flex-col space-y-4 text-left cursor-pointer">
                     <div className="relative aspect-[4/5] bg-white rounded-2xl overflow-hidden p-4 border border-[#B0B7C3]/40 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow">
                       {item.mainImage && (
-                        <Image src={item.mainImage} alt={item.name} fill sizes="240px" className="object-contain p-2 opacity-95 group-hover:scale-102 transition-transform duration-500" />
+                        <Image data-pin-nopin="true" src={item.mainImage} alt={item.name} fill sizes="240px" className="object-contain p-2 opacity-95 group-hover:scale-102 transition-transform duration-500" />
                       )}
                     </div>
                     <div className="flex justify-between items-baseline gap-2">
@@ -587,7 +587,7 @@ export default function ProductDetailPage() {
                   <div key={item.id} onClick={() => router.push(`/product/${item.id}`)} className="snap-start shrink-0 w-[240px] group flex flex-col space-y-4 text-left cursor-pointer">
                     <div className="relative aspect-[4/5] bg-[#FAF6F0] rounded-2xl overflow-hidden p-4 border border-[#B0B7C3]/40 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow">
                       {item.mainImage && (
-                        <Image src={item.mainImage} alt={item.name} fill sizes="240px" className="object-contain p-2 opacity-95 group-hover:scale-102 transition-transform duration-500" />
+                        <Image data-pin-nopin="true" src={item.mainImage} alt={item.name} fill sizes="240px" className="object-contain p-2 opacity-95 group-hover:scale-102 transition-transform duration-500" />
                       )}
                     </div>
                     <div className="flex justify-between items-baseline gap-2">
@@ -671,7 +671,7 @@ export default function ProductDetailPage() {
               {/* Right Box: Model Dropper Close-up */}
               <div className="relative rounded-3xl overflow-hidden min-h-[300px] border border-[#B0B7C3] bg-[#FAF6F0]">
                 {product.bottomSection.image && (
-                  <Image
+                  <Image data-pin-nopin="true"
                     src={product.bottomSection.image}
                     alt={product.bottomSection.title}
                     fill

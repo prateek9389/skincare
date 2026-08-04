@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
@@ -125,15 +125,31 @@ export default function ProfilePage() {
       const userDoc = await getDoc(doc(db, "users", userId));
       if (userDoc.exists()) {
         const data = userDoc.data();
+        let firstName = data.firstName || "";
+        let lastName = data.lastName || "";
+        
+        if (!firstName && !lastName && auth.currentUser?.displayName) {
+          const nameParts = auth.currentUser.displayName.split(" ");
+          firstName = nameParts[0] || "";
+          lastName = nameParts.slice(1).join(" ") || "";
+        }
+        
         setFormData({
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
+          firstName,
+          lastName,
           address: data.address || "",
           city: data.city || "",
           state: data.state || "",
           zipCode: data.zipCode || "",
           phone: data.phone || "",
         });
+      } else if (auth.currentUser?.displayName) {
+        const nameParts = auth.currentUser.displayName.split(" ");
+        setFormData(prev => ({
+          ...prev,
+          firstName: nameParts[0] || "",
+          lastName: nameParts.slice(1).join(" ") || "",
+        }));
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -197,7 +213,7 @@ export default function ProfilePage() {
             <div className="bg-[#FAF6F0] p-6 sm:w-1/3 border-b sm:border-b-0 sm:border-r border-[#B0B7C3] flex items-center justify-center relative">
               {order.items && order.items.length > 0 && (
                 <div className="relative w-32 h-32">
-                  <Image 
+                  <Image data-pin-nopin="true" 
                     src={order.items[0].image || "/placeholder.png"} 
                     alt={order.items[0].name || "Product"} 
                     fill 
@@ -232,7 +248,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-[9px] text-[#BCAE9E] uppercase tracking-widest font-bold mb-1">Total Amount</p>
-                  <p className="text-xs font-bold text-[#0D3C6A]">â‚¹{(order.total || 0)}</p>
+                  <p className="text-xs font-bold text-[#0D3C6A]">₹{(order.total || 0)}</p>
                 </div>
               </div>
 
@@ -379,11 +395,11 @@ export default function ProfilePage() {
             <div key={item.product.id} className="flex items-center justify-between border-b border-[#B0B7C3]/50 pb-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-[#FAF6F0] rounded-xl flex items-center justify-center p-2 relative">
-                  <Image src={item.product.image || "/placeholder.png"} alt={item.product.name} fill sizes="64px" className="object-contain drop-shadow-sm" />
+                  <Image data-pin-nopin="true" src={item.product.image || "/placeholder.png"} alt={item.product.name} fill sizes="64px" className="object-contain drop-shadow-sm" />
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-[#0D3C6A] uppercase tracking-wider">{item.product.name}</h3>
-                  <p className="text-[10px] text-[#00A896]">â‚¹{item.product.price}</p>
+                  <p className="text-[10px] text-[#00A896]">₹{item.product.price}</p>
                 </div>
               </div>
               
@@ -402,7 +418,7 @@ export default function ProfilePage() {
         </div>
         
         <div className="pt-4 flex justify-between items-center">
-          <p className="font-serif text-lg text-[#0D3C6A]">Total: <span className="font-bold">â‚¹{total}</span></p>
+          <p className="font-serif text-lg text-[#0D3C6A]">Total: <span className="font-bold">₹{total}</span></p>
           <Link href="/checkout" className="bg-[#0D3C6A] hover:bg-[#383838] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-md">
             Checkout
           </Link>

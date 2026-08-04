@@ -41,7 +41,7 @@ export default function CheckoutPage() {
     state: "",
     zipCode: "",
     phone: "",
-    shippingMethod: "standard", // standard (â‚¹0) or express (â‚¹15)
+    shippingMethod: "standard", // standard (₹0) or express (₹15)
     cardNumber: "",
     expiry: "",
     cvv: "",
@@ -652,7 +652,7 @@ export default function CheckoutPage() {
               {cartItems.map((item) => (
                 <div key={item.product.id} className="flex gap-4 items-center group">
                   <div className="relative w-16 h-16 bg-white rounded-xl overflow-hidden border border-[#B0B7C3] p-1 flex items-center justify-center shrink-0">
-                    <Image
+                    <Image data-pin-nopin="true"
                       src={item.product.image}
                       alt={item.product.name}
                       fill
@@ -698,7 +698,7 @@ export default function CheckoutPage() {
                   Apply
                 </button>
               </div>
-              {appliedCoupon && <span className="text-[10px] text-green-600 block">âœ¨ {appliedCoupon.discount} code applied!</span>}
+              {appliedCoupon && <span className="text-[10px] text-green-600 block">✨ {appliedCoupon.discount} code applied!</span>}
               {discountError && <span className="text-[10px] text-red-500 block">{discountError}</span>}
               
               {applicableCouponsForCart.length > 0 && !appliedCoupon && (

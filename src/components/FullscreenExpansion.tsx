@@ -1,11 +1,15 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import Image from "next/image";
-import { PRODUCTS } from "@/data/products";
+import { PRODUCTS, Product } from "@/data/products";
 import Link from "next/link";
 
-export default function FullscreenExpansion() {
+interface FullscreenExpansionProps {
+  onAddToCart?: (product: Product) => void;
+}
+
+export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansionProps) {
   return (
     <section className="w-full py-20 md:py-28 bg-black text-white relative select-none overflow-hidden">
       {/* Subtle grid pattern background on the black section */}
@@ -41,7 +45,7 @@ export default function FullscreenExpansion() {
                 className="w-[180px] sm:w-[220px] bg-neutral-900 rounded-2xl border border-neutral-800 p-4 flex flex-col space-y-4 shrink-0 hover:border-neutral-700 transition-colors duration-300 shadow-xl"
               >
                 <Link href={`/product/${product.id}`} className="block relative w-full aspect-[4/3] bg-neutral-950 rounded-xl overflow-hidden p-2 cursor-pointer">
-                  <Image
+                  <Image data-pin-nopin="true"
                     src={product.image}
                     alt={product.name}
                     fill
@@ -63,8 +67,21 @@ export default function FullscreenExpansion() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">â‚¹{product.price}</span>
-                  <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider">Premium</span>
+                  <span className="text-xs font-bold text-white">₹{product.price}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider hidden sm:block">Premium</span>
+                    {onAddToCart && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); onAddToCart(product); }}
+                        aria-label={`Add ${product.name} to cart`}
+                        className="w-6 h-6 rounded-full border border-white/30 text-white flex items-center justify-center transition-all duration-300 hover:bg-white hover:text-black z-10 cursor-pointer shadow-sm"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -76,7 +93,7 @@ export default function FullscreenExpansion() {
                 className="w-[180px] sm:w-[220px] bg-neutral-900 rounded-2xl border border-neutral-800 p-4 flex flex-col space-y-4 shrink-0 hover:border-neutral-700 transition-colors duration-300 shadow-xl"
               >
                 <Link href={`/product/${product.id}`} className="block relative w-full aspect-[4/3] bg-neutral-950 rounded-xl overflow-hidden p-2 cursor-pointer">
-                  <Image
+                  <Image data-pin-nopin="true"
                     src={product.image}
                     alt={product.name}
                     fill
@@ -98,8 +115,21 @@ export default function FullscreenExpansion() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">â‚¹{product.price}</span>
-                  <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider">Premium</span>
+                  <span className="text-xs font-bold text-white">₹{product.price}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider hidden sm:block">Premium</span>
+                    {onAddToCart && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); onAddToCart(product); }}
+                        aria-label={`Add ${product.name} to cart`}
+                        className="w-6 h-6 rounded-full border border-white/30 text-white flex items-center justify-center transition-all duration-300 hover:bg-white hover:text-black z-10 cursor-pointer shadow-sm"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

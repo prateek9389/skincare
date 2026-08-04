@@ -76,7 +76,7 @@ export default function HorizontalScrollGallery() {
             </div>
           </div>
           <div className="relative h-full w-full bg-[#B0B7C3] pointer-events-none">
-            <Image 
+            <Image data-pin-nopin="true" 
               src="/hero-products.png" 
               alt="GUNALIFE skincare collection" 
               fill 
@@ -108,7 +108,7 @@ export default function HorizontalScrollGallery() {
         <div className="w-[80vw] h-[80vh] flex-shrink-0 bg-white rounded-3xl border border-[#B0B7C3] shadow-md grid grid-cols-1 lg:grid-cols-2 items-stretch">
           <div className="relative h-full w-full bg-[#B0B7C3] flex items-center justify-center p-8 pointer-events-none">
             <div className="relative w-full max-w-[280px] aspect-square drop-shadow-2xl">
-              <Image 
+              <Image data-pin-nopin="true" 
                 src="/cream-splash.png" 
                 alt="Active hydration splash cream" 
                 fill 
@@ -163,7 +163,7 @@ export default function HorizontalScrollGallery() {
           </div>
           <div className="relative h-full w-full bg-white flex items-center justify-center p-8 pointer-events-none">
             <div className="relative w-full max-w-[260px] aspect-square drop-shadow-xl">
-              <Image 
+              <Image data-pin-nopin="true" 
                 src="/daily-moisturizer.png" 
                 alt="GUNALIFE daily moisturizer jar" 
                 fill 

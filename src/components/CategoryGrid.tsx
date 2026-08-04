@@ -72,7 +72,7 @@ export default function CategoryGrid() {
               className="relative aspect-[3/4] w-[140px] sm:w-[170px] rounded-2xl overflow-hidden group border border-[#B0B7C3]/40 shadow-xs hover:shadow-md transition-all duration-500 cursor-pointer shrink-0"
             >
               {/* Category Background Image */}
-              <Image
+              <Image data-pin-nopin="true"
                 src={category.image}
                 alt={category.name}
                 fill

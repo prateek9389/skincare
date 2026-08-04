@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStoreSettings } from "@/lib/useStoreSettings";
 
@@ -47,7 +47,7 @@ export default function Header({
   const { settings } = useStoreSettings();
 
   const promos = settings.promoText 
-    ? [settings.promoText, "COMPLIMENTARY SAMPLES WITH EVERY ORDER", "USA (INR) ₹"]
+    ? [settings.promoText]
     : [
         `FREE SHIPPING ON ORDERS OVER ₹${settings.freeShippingThreshold || 499}`,
         "COMPLIMENTARY SAMPLES WITH EVERY ORDER",
@@ -64,26 +64,32 @@ export default function Header({
   const [profileName, setProfileName] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    let unsubscribeDoc: (() => void) | undefined;
+    
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        setProfileName(currentUser.email || "");
-        try {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        setProfileName(currentUser.displayName || currentUser.email || "");
+        unsubscribeDoc = onSnapshot(doc(db, "users", currentUser.uid), (userDoc) => {
           if (userDoc.exists()) {
             const data = userDoc.data();
             if (data.firstName || data.lastName) {
               setProfileName(`${data.firstName || ""} ${data.lastName || ""}`.trim());
             }
           }
-        } catch (e) {
-          console.error("Error fetching user profile:", e);
-        }
+        }, (error) => {
+          console.error("Error listening to user profile:", error);
+        });
       } else {
         setProfileName("");
+        if (unsubscribeDoc) unsubscribeDoc();
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDoc) unsubscribeDoc();
+    };
   }, []);
 
   useEffect(() => {
@@ -101,6 +107,10 @@ export default function Header({
     (acc, item) => acc + item.product.price * item.quantity,
     0
   );
+
+  const freeShippingThreshold = settings?.freeShippingThreshold || 499;
+  const amountRemaining = Math.max(0, freeShippingThreshold - subtotal);
+  const progressPercent = Math.min(100, (subtotal / freeShippingThreshold) * 100);
 
   return (
     <>
@@ -138,7 +148,7 @@ export default function Header({
           {/* Centered Brand Logo */}
           <div className="flex text-center justify-center">
             <a href="/" className="inline-block relative w-48 h-12 lg:w-72 lg:h-16">
-              <Image
+              <Image data-pin-nopin="true"
                 src="/logo-v2.png"
                 alt={settings.brandName}
                 fill
@@ -298,16 +308,37 @@ export default function Header({
             <div className="w-screen max-w-md bg-[#FFFFFF] shadow-2xl flex flex-col">
 
               {/* Header */}
-              <div className="px-6 py-6 border-b border-[#B0B7C3] flex items-center justify-between">
-                <h2 className="text-sm font-semibold tracking-widest text-[#0D3C6A] uppercase">Your Bag ({totalItems})</h2>
-                <button
-                  onClick={() => setIsCartOpen(false)}
-                  className="text-[#0D3C6A] hover:text-[#BCAE9E] transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              <div className="px-6 py-6 border-b border-[#B0B7C3]">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold tracking-widest text-[#0D3C6A] uppercase">Your Bag ({totalItems})</h2>
+                  <button
+                    onClick={() => setIsCartOpen(false)}
+                    className="text-[#0D3C6A] hover:text-[#BCAE9E] transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* Free Shipping Progress */}
+                <div className="bg-[#FAF6F0] rounded-xl p-4 text-center border border-[#B0B7C3] mt-2">
+                  {amountRemaining > 0 ? (
+                    <p className="text-xs text-[#0D3C6A] font-medium tracking-wide">
+                      You're <span className="font-bold text-[#00A896]">₹{amountRemaining.toFixed(2)}</span> away from FREE Delivery!
+                    </p>
+                  ) : (
+                    <p className="text-xs text-[#00A896] font-bold tracking-wide">
+                      ✨ You have unlocked FREE Delivery!
+                    </p>
+                  )}
+                  <div className="w-full h-1.5 bg-gray-200 rounded-full mt-3 overflow-hidden">
+                    <div 
+                      className="h-full bg-[#00A896] transition-all duration-500 ease-out" 
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Cart Items List */}
@@ -329,7 +360,7 @@ export default function Header({
                   cartItems.map((item) => (
                     <div key={item.product.id} className="py-6 flex first:pt-0 last:pb-0">
                       <div className="flex-shrink-0 w-20 h-20 bg-white border border-[#B0B7C3] rounded-md overflow-hidden relative">
-                        <Image
+                        <Image data-pin-nopin="true"
                           src={item.product.image}
                           alt={item.product.name}
                           fill

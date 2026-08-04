@@ -133,7 +133,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
               {order.items?.map((item: any, idx: number) => (
                 <div key={idx} className="p-4 sm:p-6 flex items-center gap-6">
                   <div className="relative w-20 h-20 bg-[#FAF6F0] rounded-2xl border border-[#B0B7C3] p-2 shrink-0">
-                    <Image src={item.image || "/placeholder.png"} alt={item.name || "Product"} fill sizes="80px" className="object-contain" />
+                    <Image data-pin-nopin="true" src={item.image || "/placeholder.png"} alt={item.name || "Product"} fill sizes="80px" className="object-contain" />
                   </div>
                   <div className="flex-grow space-y-1">
                     <h4 className="font-serif text-sm font-bold text-[#0D3C6A]">{item.name}</h4>

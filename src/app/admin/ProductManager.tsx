@@ -97,7 +97,7 @@ const ImageUpload = ({ label, value, onChange }: { label: string; value: string;
       <div className="flex items-center gap-4">
         {value && (
           <div className="relative w-16 h-16 rounded-xl border border-[#B0B7C3] overflow-hidden bg-[#FAF6F0]">
-            <Image src={value} alt="Preview" fill className="object-cover" />
+            <Image data-pin-nopin="true" src={value} alt="Preview" fill className="object-cover" />
           </div>
         )}
         <div className="flex-1">
@@ -349,7 +349,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                       </div>
                       {existingQty && (
                         <div className="border-t border-[#BCAE9E] pt-3">
-                          <ImageUpload
+                          <Image data-pin-nopin="true"Upload
                             label={`${label} Image`}
                             value={existingQty.image || ""}
                             onChange={(url) => {
@@ -461,8 +461,8 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-              <ImageUpload label="Main Product Image" value={currentProduct.mainImage} onChange={(url) => setCurrentProduct({ ...currentProduct, mainImage: url })} />
-              <ImageUpload label="Texture/Smear Image (Center Section)" value={currentProduct.textureImage} onChange={(url) => setCurrentProduct({ ...currentProduct, textureImage: url })} />
+              <Image data-pin-nopin="true"Upload label="Main Product Image" value={currentProduct.mainImage} onChange={(url) => setCurrentProduct({ ...currentProduct, mainImage: url })} />
+              <Image data-pin-nopin="true"Upload label="Texture/Smear Image (Center Section)" value={currentProduct.textureImage} onChange={(url) => setCurrentProduct({ ...currentProduct, textureImage: url })} />
             </div>
           </section>
 
@@ -474,12 +474,12 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                 <div key={idx} className="bg-[#FAF6F0]/50 p-6 rounded-2xl border border-[#B0B7C3] space-y-4">
                   <h4 className="text-xs font-bold uppercase tracking-widest text-[#0D3C6A]">Slide {idx + 1}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ImageUpload label="Left Model Image" value={slide.leftImage} onChange={(url) => {
+                    <Image data-pin-nopin="true"Upload label="Left Model Image" value={slide.leftImage} onChange={(url) => {
                       const newSlides = [...currentProduct.carouselSlides];
                       newSlides[idx].leftImage = url;
                       setCurrentProduct({ ...currentProduct, carouselSlides: newSlides });
                     }} />
-                    <ImageUpload label="Right Product Image" value={slide.rightImage} onChange={(url) => {
+                    <Image data-pin-nopin="true"Upload label="Right Product Image" value={slide.rightImage} onChange={(url) => {
                       const newSlides = [...currentProduct.carouselSlides];
                       newSlides[idx].rightImage = url;
                       setCurrentProduct({ ...currentProduct, carouselSlides: newSlides });
@@ -560,7 +560,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                 </div>
               </div>
               <div>
-                <ImageUpload label="Side Image" value={currentProduct.bottomSection.image} onChange={(url) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, image: url }})} />
+                <Image data-pin-nopin="true"Upload label="Side Image" value={currentProduct.bottomSection.image} onChange={(url) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, image: url }})} />
               </div>
             </div>
           </section>
@@ -579,7 +579,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                     newGallery.splice(idx, 1);
                     setCurrentProduct({ ...currentProduct, gallery: newGallery });
                   }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-100 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs z-10 hover:bg-red-500 hover:text-white">&times;</button>
-                  <ImageUpload label={`Gallery Image ${idx + 1}`} value={img} onChange={(url) => {
+                  <Image data-pin-nopin="true"Upload label={`Gallery Image ${idx + 1}`} value={img} onChange={(url) => {
                     const newGallery = [...currentProduct.gallery];
                     newGallery[idx] = url;
                     setCurrentProduct({ ...currentProduct, gallery: newGallery });
@@ -667,7 +667,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setIsAiModalOpen(false)} disabled={isAiGenerating} className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#BCAE9E] hover:text-[#0D3C6A]">Cancel</button>
                 <button type="button" onClick={handleAiGenerate} disabled={isAiGenerating || !aiPrompt.trim()} className="bg-[#0D3C6A] text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-black disabled:opacity-50 flex items-center gap-2">
-                  {isAiGenerating ? "Generating..." : "âœ¨ Generate"}
+                  {isAiGenerating ? "Generating..." : "✨ Generate"}
                 </button>
               </div>
             </div>
@@ -723,14 +723,14 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
             <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: idx * 0.05 }} className="bg-white border border-[#B0B7C3] rounded-2xl overflow-hidden group hover:shadow-md hover:border-[#5BA6D6] transition-all relative">
               <div className="relative aspect-square bg-[#FAF6F0] p-6 overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => openEditor(p)}>
                 {p.mainImage ? (
-                  <Image src={p.mainImage} alt={p.name} fill sizes="240px" className="object-contain p-4 group-hover:scale-105 transition-transform duration-500" />
+                  <Image data-pin-nopin="true" src={p.mainImage} alt={p.name} fill sizes="240px" className="object-contain p-4 group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                   <div className="text-[10px] text-[#00A896] font-bold uppercase tracking-widest">No Image</div>
                 )}
                 <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={(e) => { e.stopPropagation(); toggleFeatured(p); }} className={`w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] ${p.isFeatured ? "text-yellow-500" : "text-[#0D3C6A]"} hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs`} title={p.isFeatured ? "Remove from Featured" : "Mark as Featured"}>â˜…</button>
-                  <button onClick={(e) => { e.stopPropagation(); openEditor(p); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] text-[#0D3C6A] hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs" title="Edit">âœŽ</button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-red-100 text-red-500 hover:bg-red-500 hover:text-white transition-colors text-xs" title="Delete">Ã—</button>
+                  <button onClick={(e) => { e.stopPropagation(); toggleFeatured(p); }} className={`w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] ${p.isFeatured ? "text-yellow-500" : "text-[#0D3C6A]"} hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs`} title={p.isFeatured ? "Remove from Featured" : "Mark as Featured"}>★</button>
+                  <button onClick={(e) => { e.stopPropagation(); openEditor(p); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-[#B0B7C3] text-[#0D3C6A] hover:bg-[#0D3C6A] hover:text-white transition-colors text-xs" title="Edit">✎</button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-red-100 text-red-500 hover:bg-red-500 hover:text-white transition-colors text-xs" title="Delete">×</button>
                 </div>
               </div>
               <div className="p-4 space-y-2 text-left bg-white border-t border-[#B0B7C3]">
@@ -773,7 +773,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                       <div className="flex items-center gap-4">
                         {prod.mainImage ? (
                           <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-[#B0B7C3] bg-white">
-                            <Image src={prod.mainImage} alt={prod.name} fill className="object-cover" />
+                            <Image data-pin-nopin="true" src={prod.mainImage} alt={prod.name} fill className="object-cover" />
                           </div>
                         ) : (
                           <div className="w-10 h-10 rounded-lg border border-[#B0B7C3] bg-[#FAF6F0] flex items-center justify-center text-[8px] text-[#00A896]">No Img</div>
@@ -788,7 +788,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                     <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price}</td>
                     <td className="p-4 text-xs font-bold text-[#0D3C6A]">{prod.inventory || 0} units</td>
                     <td className="p-4 pr-6 text-right space-x-3">
-                      <button onClick={(e) => { e.stopPropagation(); toggleFeatured(prod); }} className={`text-xs font-bold ${prod.isFeatured ? "text-yellow-500 hover:text-yellow-600" : "text-[#BCAE9E] hover:text-[#0D3C6A]"} transition-colors uppercase tracking-widest`} title={prod.isFeatured ? "Remove from Featured" : "Mark as Featured"}>â˜…</button>
+                      <button onClick={(e) => { e.stopPropagation(); toggleFeatured(prod); }} className={`text-xs font-bold ${prod.isFeatured ? "text-yellow-500 hover:text-yellow-600" : "text-[#BCAE9E] hover:text-[#0D3C6A]"} transition-colors uppercase tracking-widest`} title={prod.isFeatured ? "Remove from Featured" : "Mark as Featured"}>★</button>
                       <button onClick={(e) => { e.stopPropagation(); openEditor(prod); }} className="text-xs font-bold text-[#BCAE9E] hover:text-[#0D3C6A] transition-colors uppercase tracking-widest">Edit</button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete(prod.id); }} className="text-xs font-bold text-red-400 hover:text-red-600 transition-colors uppercase tracking-widest">Delete</button>
                     </td>

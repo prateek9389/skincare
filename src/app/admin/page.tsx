@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Product, PRODUCTS } from "@/data/products";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "@/lib/firebase";
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut, User } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut, User, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 import ProductManager from "./ProductManager";
@@ -166,6 +166,9 @@ export default function AdminPanel() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [adminCurrentPassword, setAdminCurrentPassword] = useState("");
+  const [adminNewPassword, setAdminNewPassword] = useState("");
+  const [adminPasswordMessage, setAdminPasswordMessage] = useState("");
 
   const { settings, updateSettings } = useStoreSettings();
   const [formSettings, setFormSettings] = useState(settings);
@@ -214,6 +217,27 @@ export default function AdminPanel() {
 
   const handleLogout = async () => {
     await signOut(auth);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminPasswordMessage("");
+    if (!user || !user.email) return;
+    if (adminNewPassword.length < 6) {
+      setAdminPasswordMessage("New password must be at least 6 characters.");
+      return;
+    }
+    try {
+      const credential = EmailAuthProvider.credential(user.email, adminCurrentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, adminNewPassword);
+      setAdminPasswordMessage("Password updated successfully!");
+      setAdminCurrentPassword("");
+      setAdminNewPassword("");
+    } catch (err: any) {
+      console.error(err);
+      setAdminPasswordMessage(err.message || "Failed to update password. Check your current password.");
+    }
   };
 
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -690,7 +714,7 @@ export default function AdminPanel() {
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E] transition-colors"
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="••••••••"
               />
             </div>
 
@@ -835,7 +859,7 @@ export default function AdminPanel() {
                       </div>
                       <div className="relative min-h-[180px] bg-gradient-to-br from-[#FAF6F0] to-[#E9E1D6] flex items-center justify-center p-6">
                         <div className="relative w-40 h-40">
-                          <Image src={IMG.serum} alt="Featured serum" fill sizes="160px" className="object-contain drop-shadow-xl" />
+                          <Image data-pin-nopin="true" src={IMG.serum} alt="Featured serum" fill sizes="160px" className="object-contain drop-shadow-xl" />
                         </div>
                         <span className="absolute top-4 right-4"><Pill tone="amber">Best Seller</Pill></span>
                       </div>
@@ -943,7 +967,7 @@ export default function AdminPanel() {
                       {lowStockProducts.map((p, i) => (
                         <div key={p.id} className="flex items-center gap-4 bg-[#FAF6F0]/60 border border-[#B0B7C3] rounded-2xl p-4">
                           <div className="relative w-14 h-14 rounded-xl bg-white border border-[#B0B7C3] p-1 shrink-0 overflow-hidden">
-                            <Image src={p.image} alt={p.name} fill sizes="56px" className="object-contain" />
+                            <Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="56px" className="object-contain" />
                           </div>
                           <div className="min-w-0">
                             <h4 className="text-xs font-semibold text-[#0D3C6A] truncate">{p.name}</h4>
@@ -967,7 +991,7 @@ export default function AdminPanel() {
                               const p = productList.find(px => px.id === tp.id) || productList[0];
                               return (
                                 <tr key={p.id} className="hover:bg-[#FAF6F0]/40 transition-colors">
-                                  <td className="py-3 flex items-center gap-3"><div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] overflow-hidden shrink-0 border border-[#5BA6D6] p-0.5"><Image src={p.image} alt={p.name} fill sizes="32px" className="object-contain" /></div><span className="font-medium text-[#0D3C6A] line-clamp-1">{p.name}</span></td>
+                                  <td className="py-3 flex items-center gap-3"><div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] overflow-hidden shrink-0 border border-[#5BA6D6] p-0.5"><Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="32px" className="object-contain" /></div><span className="font-medium text-[#0D3C6A] line-clamp-1">{p.name}</span></td>
                                   <td className="py-3 uppercase text-[10px] tracking-wider text-[#00A896] font-medium">{p.category}</td>
                                   <td className="py-3"><Pill tone="green">In Stock</Pill></td>
                                   <td className="py-3 font-semibold text-[#0D3C6A]">₹{p.price}</td>
@@ -1043,7 +1067,7 @@ export default function AdminPanel() {
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 border-b border-[#B0B7C3]/60">
                           <div className="flex items-center gap-4">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${o.status === "Delivered" ? "bg-green-50 text-green-600" : o.status === "Shipped" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"}`}>{o.status === "Delivered" ? <Package className="w-5 h-5" /> : o.status === "Shipped" ? <Truck className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}</div>
-                            <div className="text-left"><h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">{o.orderId}</h4><span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} â€¢ ` : ""}{o.date}</span></div>
+                            <div className="text-left"><h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">{o.orderId}</h4><span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} • ` : ""}{o.date}</span></div>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className={`inline-block text-[9px] font-bold uppercase px-3 py-1.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span>
@@ -1057,7 +1081,7 @@ export default function AdminPanel() {
                               {o.items.map((item, iIdx) => {
                                 const matchedProduct = PRODUCTS.find((pp) => pp.id === (item.productId || item.id));
                                 const imgSrc = matchedProduct ? matchedProduct.image : item.image;
-                                return (<div key={iIdx} className="flex items-center gap-2 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl p-2 pr-4"><div className="relative w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 border border-[#B0B7C3] p-0.5">{imgSrc && <Image src={imgSrc} alt={item.name} fill sizes="40px" className="object-contain" />}</div><div className="text-left"><span className="text-xs font-semibold text-[#0D3C6A] block leading-tight">{item.name}</span><span className="text-[9px] text-[#00A896]">Qty: {item.quantity} â€¢ ₹{item.price}</span></div></div>);
+                                return (<div key={iIdx} className="flex items-center gap-2 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl p-2 pr-4"><div className="relative w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 border border-[#B0B7C3] p-0.5">{imgSrc && <Image data-pin-nopin="true" src={imgSrc} alt={item.name} fill sizes="40px" className="object-contain" />}</div><div className="text-left"><span className="text-xs font-semibold text-[#0D3C6A] block leading-tight">{item.name}</span><span className="text-[9px] text-[#00A896]">Qty: {item.quantity} • ₹{item.price}</span></div></div>);
                               })}
                             </div>
                           </div>
@@ -1112,7 +1136,7 @@ export default function AdminPanel() {
                           <div><span className="text-[8px] uppercase tracking-widest text-[#00A896] font-bold block">Lifetime Value</span><span className="text-base font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(0)}</span></div>
                         </div>
                         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#B0B7C3]/60">
-                          <div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] border border-[#B0B7C3] p-0.5 overflow-hidden shrink-0">{c.fav && <Image src={c.fav} alt="favourite" fill sizes="32px" className="object-contain" />}</div>
+                          <div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] border border-[#B0B7C3] p-0.5 overflow-hidden shrink-0">{c.fav && <Image data-pin-nopin="true" src={c.fav} alt="favourite" fill sizes="32px" className="object-contain" />}</div>
                           <span className="text-[10px] text-[#00A896]">Frequently buys this item</span>
                         </div>
                       </motion.div>
@@ -1162,7 +1186,7 @@ export default function AdminPanel() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                       {topProductsList.slice(0, 4).map((p, i) => (
                         <div key={p.id} className="bg-[#FAF6F0]/50 border border-[#B0B7C3] rounded-2xl p-4 flex flex-col items-center text-center">
-                          <div className="relative w-20 h-20 mb-3">{p.image && <Image src={p.image} alt={p.name} fill sizes="80px" className="object-contain" />}</div>
+                          <div className="relative w-20 h-20 mb-3">{p.image && <Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="80px" className="object-contain" />}</div>
                           <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold">#{i + 1}</span>
                           <h4 className="text-xs font-semibold text-[#0D3C6A] mt-1 leading-tight">{p.name}</h4>
                           <span className="text-sm font-bold text-[#0D3C6A] mt-2">₹{p.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -1180,7 +1204,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="space-y-4">
                       {topRegionsList.length > 0 ? topRegionsList.map((r) => (
-                        <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â€¢ {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
+                        <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
                       )) : (
                         <div className="text-xs text-[#0D3C6A]">No regional data available yet.</div>
                       )}
@@ -1252,7 +1276,7 @@ export default function AdminPanel() {
                         <span className="text-[10px] text-[#00A896] uppercase tracking-wider block mt-2">Based on 1,284 reviews</span>
                       </div>
                       <div className="md:col-span-2 space-y-2">
-                        {[{ s: 5, pct: 82 }, { s: 4, pct: 12 }, { s: 3, pct: 4 }, { s: 2, pct: 1 }, { s: 1, pct: 1 }].map((r) => (<div key={r.s} className="flex items-center gap-3"><span className="text-[10px] font-bold text-[#00A896] w-6">{r.s}â˜…</span><div className="flex-1 h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-amber-400" style={{ width: `${r.pct}%` }} /></div><span className="text-[10px] text-[#00A896] w-8 text-right">{r.pct}%</span></div>))}
+                        {[{ s: 5, pct: 82 }, { s: 4, pct: 12 }, { s: 3, pct: 4 }, { s: 2, pct: 1 }, { s: 1, pct: 1 }].map((r) => (<div key={r.s} className="flex items-center gap-3"><span className="text-[10px] font-bold text-[#00A896] w-6">{r.s}★</span><div className="flex-1 h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-amber-400" style={{ width: `${r.pct}%` }} /></div><span className="text-[10px] text-[#00A896] w-8 text-right">{r.pct}%</span></div>))}
                       </div>
                     </div>
                   </Card>
@@ -1270,13 +1294,13 @@ export default function AdminPanel() {
                     {reviews.filter(r => reviewFilter === "All" ? true : r.status.toLowerCase() === reviewFilter.toLowerCase()).map((r, idx) => (
                       <motion.div key={r.id || idx} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: idx * 0.05 }} className="bg-white border border-[#B0B7C3] rounded-2xl p-5 text-left space-y-4 hover:shadow-sm transition-shadow">
                         <div className="flex items-start gap-4">
-                          <div className="relative w-14 h-14 rounded-xl bg-[#FAF6F0] border border-[#B0B7C3] p-1 shrink-0 overflow-hidden">{r.productImg && <Image src={r.productImg} alt={r.productName} fill sizes="56px" className="object-contain" />}</div>
+                          <div className="relative w-14 h-14 rounded-xl bg-[#FAF6F0] border border-[#B0B7C3] p-1 shrink-0 overflow-hidden">{r.productImg && <Image data-pin-nopin="true" src={r.productImg} alt={r.productName} fill sizes="56px" className="object-contain" />}</div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
                               <div><span className="font-bold text-[#0D3C6A] text-sm block">{r.clientName}</span><span className="text-[9px] text-[#00A896] uppercase tracking-wider">{r.productName}</span></div>
                               <Pill tone={r.status === "approved" ? "green" : r.status === "rejected" ? "red" : "amber"}>{r.status}</Pill>
                             </div>
-                            <div className="flex items-center gap-2 mt-1"><span className="text-amber-500 text-xs">{"â˜…".repeat(r.rating)}<span className="text-[#B0B7C3]">{"â˜…".repeat(5 - r.rating)}</span></span><span className="text-[9px] text-[#00A896]">{r.dateStr}</span></div>
+                            <div className="flex items-center gap-2 mt-1"><span className="text-amber-500 text-xs">{"★".repeat(r.rating)}<span className="text-[#B0B7C3]">{"★".repeat(5 - r.rating)}</span></span><span className="text-[9px] text-[#00A896]">{r.dateStr}</span></div>
                           </div>
                         </div>
                         <p className="text-xs text-[#0D3C6A]/80 leading-relaxed font-light">{r.comment}</p>
@@ -1319,7 +1343,7 @@ export default function AdminPanel() {
                           return (
                             <div key={order.orderId} className="flex items-center gap-4 bg-[#FAF6F0]/50 border border-[#B0B7C3] rounded-2xl p-4">
                               <div className="relative w-12 h-12 rounded-xl bg-white border border-[#B0B7C3] p-1 shrink-0 overflow-hidden">
-                                <Image src={firstItem?.image || "/placeholder.png"} alt="parcel" fill sizes="48px" className="object-contain" />
+                                <Image data-pin-nopin="true" src={firstItem?.image || "/placeholder.png"} alt="parcel" fill sizes="48px" className="object-contain" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-center">
@@ -1327,7 +1351,7 @@ export default function AdminPanel() {
                                   <span className="text-[10px] text-[#00A896]">In Transit</span>
                                 </div>
                                 <span className="text-[10px] text-[#00A896] flex items-center gap-1 mt-0.5">
-                                  <Truck className="w-3 h-3" /> Standard Shipping â†’ {city}
+                                  <Truck className="w-3 h-3" /> Standard Shipping → {city}
                                 </span>
                                 <div className="w-full h-1.5 bg-[#B0B7C3] rounded-full overflow-hidden mt-2">
                                   <div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `50%` }} />
@@ -1339,6 +1363,26 @@ export default function AdminPanel() {
                       ) : (
                         <p className="text-xs text-[#00A896]">No active shipments at the moment.</p>
                       )}
+                    </div>
+                  </Card>
+
+                  {/* Shipping Configuration */}
+                  <Card className="p-6 text-left mt-6">
+                    <div className="flex justify-between items-center border-b border-[#B0B7C3] pb-4 mb-4">
+                      <SectionHeader title="Shipping Rules" subtitle="Configure delivery fees and free shipping thresholds" />
+                      <button onClick={handleSaveSettings} className="bg-[#BCAE9E] text-black font-bold text-[10px] uppercase tracking-widest px-6 py-2 rounded-xl transition-all shadow-sm hover:opacity-90">Save Settings</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Free Shipping Threshold</label>
+                        <p className="text-[10px] text-[#0D3C6A]/70 mb-2">Orders above this amount will get free shipping automatically.</p>
+                        <input type="number" value={formSettings.freeShippingThreshold} onChange={e => setFormSettings({...formSettings, freeShippingThreshold: e.target.value === '' ? '' as any : Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Standard Shipping Rate</label>
+                        <p className="text-[10px] text-[#0D3C6A]/70 mb-2">Default delivery charge for orders below the threshold.</p>
+                        <input type="number" value={formSettings.standardShippingRate} onChange={e => setFormSettings({...formSettings, standardShippingRate: e.target.value === '' ? '' as any : Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
+                      </div>
                     </div>
                   </Card>
                 </div>
@@ -1354,8 +1398,6 @@ export default function AdminPanel() {
                       <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Store Currency</label><input type="text" value={formSettings.currency} onChange={e => setFormSettings({...formSettings, currency: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
                       <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Support Contact Email</label><input type="email" value={formSettings.supportEmail} onChange={e => setFormSettings({...formSettings, supportEmail: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
                       <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Announcement Promo Text</label><input type="text" value={formSettings.promoText} onChange={e => setFormSettings({...formSettings, promoText: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
-                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Free Shipping Threshold</label><input type="number" value={formSettings.freeShippingThreshold} onChange={e => setFormSettings({...formSettings, freeShippingThreshold: Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
-                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Standard Shipping Rate</label><input type="number" value={formSettings.standardShippingRate} onChange={e => setFormSettings({...formSettings, standardShippingRate: Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
                       <button onClick={handleSaveSettings} className="w-full bg-[#BCAE9E] text-black font-bold text-xs uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-md hover:opacity-90">Save configurations</button>
                     </div>
                   </Card>
@@ -1363,7 +1405,7 @@ export default function AdminPanel() {
 
 
                   {/* Footer Configuration */}
-                  <Card className="p-8 space-y-6 lg:col-span-2">
+                  <Card className="p-8 space-y-6">
                     <div className="flex justify-between items-center border-b border-[#B0B7C3] pb-4">
                       <SectionHeader title="Footer Configuration" subtitle="Manage storefront footer content and links" />
                       <button onClick={handleSaveSettings} className="bg-[#BCAE9E] text-black font-bold text-[10px] uppercase tracking-widest px-6 py-2 rounded-xl transition-all shadow-sm hover:opacity-90">Save Settings</button>
@@ -1410,6 +1452,29 @@ export default function AdminPanel() {
                         <input type="text" value={formSettings.footerSocialTiktok} onChange={e => setFormSettings({...formSettings, footerSocialTiktok: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-2 text-xs text-[#0D3C6A] focus:outline-none" />
                       </div>
                     </div>
+                  </Card>
+
+                  {/* Security Configuration */}
+                  <Card className="p-8 space-y-6 lg:col-span-2 mt-6">
+                    <div className="flex justify-between items-center border-b border-[#B0B7C3] pb-4">
+                      <SectionHeader title="Security" subtitle="Manage admin authentication" />
+                    </div>
+                    <form onSubmit={handleChangePassword} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Current Password</label>
+                        <input required type="password" value={adminCurrentPassword} onChange={e => setAdminCurrentPassword(e.target.value)} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">New Password</label>
+                        <input required minLength={6} type="password" value={adminNewPassword} onChange={e => setAdminNewPassword(e.target.value)} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
+                      </div>
+                      <div>
+                        <button type="submit" className="w-full bg-[#0D3C6A] text-white font-bold text-xs uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-md hover:bg-black">Update Password</button>
+                      </div>
+                    </form>
+                    {adminPasswordMessage && (
+                      <p className={`text-xs font-bold ${adminPasswordMessage.includes("success") ? "text-green-600" : "text-red-500"}`}>{adminPasswordMessage}</p>
+                    )}
                   </Card>
                 </div>
               )}
@@ -1485,7 +1550,7 @@ export default function AdminPanel() {
                 {selectedOrder.items?.map((item: any, idx: number) => (
                   <div key={idx} className="flex items-center gap-4 border border-[#B0B7C3]/50 p-3 rounded-2xl bg-white shadow-sm">
                     <div className="relative w-12 h-12 bg-[#FAF6F0] rounded-xl overflow-hidden shrink-0 border border-[#B0B7C3] p-1">
-                      <Image src={item.image || "/placeholder.png"} alt={item.name} fill sizes="48px" className="object-contain" />
+                      <Image data-pin-nopin="true" src={item.image || "/placeholder.png"} alt={item.name} fill sizes="48px" className="object-contain" />
                     </div>
                     <div className="flex-grow min-w-0 text-left">
                       <p className="text-xs font-bold text-[#0D3C6A] truncate">{item.name}</p>

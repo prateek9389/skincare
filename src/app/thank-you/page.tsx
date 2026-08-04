@@ -89,7 +89,7 @@ export default function ThankYouPage() {
                 <div key={item.id} className="flex gap-4 items-center justify-between text-xs text-[#0D3C6A]">
                   <div className="flex gap-3 items-center">
                     <div className="relative w-12 h-12 bg-[#FAF6F0] rounded-xl overflow-hidden border border-[#B0B7C3] p-1 flex items-center justify-center shrink-0">
-                      <Image
+                      <Image data-pin-nopin="true"
                         src={item.image}
                         alt={item.name}
                         fill
@@ -102,7 +102,7 @@ export default function ThankYouPage() {
                       <p className="text-[10px] text-[#00A896] uppercase tracking-wider">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-semibold">â‚¹{(item.price * item.quantity)}</span>
+                  <span className="font-semibold">₹{(item.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -116,7 +116,7 @@ export default function ThankYouPage() {
             {/* Total line */}
             <div className="flex justify-between items-baseline border-t border-[#B0B7C3] pt-4 text-xs text-[#0D3C6A]">
               <span className="uppercase font-bold tracking-wider text-[#00A896]">Total Amount Paid</span>
-              <span className="text-lg font-bold">â‚¹{order.total}</span>
+              <span className="text-lg font-bold">₹{order.total}</span>
             </div>
 
           </div>

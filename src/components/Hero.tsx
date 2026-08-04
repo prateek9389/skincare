@@ -244,7 +244,7 @@ export default function Hero() {
 
                     <Link href={`/product/${currentProduct.id}`} className="block w-full aspect-[4/3] bg-white rounded-2xl relative overflow-hidden p-2 flex items-center justify-center border border-white/50 cursor-pointer">
                       {currentProduct.mainImage ? (
-                        <Image
+                        <Image data-pin-nopin="true"
                           src={currentProduct.mainImage}
                           alt={currentProduct.name}
                           fill

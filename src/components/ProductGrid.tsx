@@ -112,7 +112,7 @@ const HorizontalProductCarousel = ({
             
               {/* Product Image */}
               <Link href={`/product/${product.id}`} className={`block w-full aspect-[4/5] relative cursor-pointer ${cardImageBgClass}`}>
-                <Image
+                <Image data-pin-nopin="true"
                   src={product.image}
                   alt={product.name}
                   fill

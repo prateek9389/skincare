@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -31,7 +32,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialEmail = "
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const result = await createUserWithEmailAndPassword(auth, email, password);
+        if (result.user) {
+          await setDoc(doc(db, "users", result.user.uid), {
+            email: result.user.email,
+            firstName: "",
+            lastName: "",
+            createdAt: new Date()
+          }, { merge: true });
+        }
       }
       onSuccess();
     } catch (err: any) {
@@ -54,7 +63,26 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialEmail = "
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      
+      if (result.user) {
+        const userRef = doc(db, "users", result.user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (!userDoc.exists()) {
+          const displayName = result.user.displayName || "";
+          const nameParts = displayName.split(" ");
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+          
+          await setDoc(userRef, {
+            email: result.user.email,
+            firstName,
+            lastName,
+            createdAt: new Date()
+          });
+        }
+      }
       onSuccess();
     } catch (err: any) {
       console.error(err);
@@ -120,7 +148,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialEmail = "
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#0D3C6A] focus:outline-none transition-all"
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                 />
               </div>
 

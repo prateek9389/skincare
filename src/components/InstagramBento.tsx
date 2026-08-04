@@ -106,7 +106,7 @@ export default function InstagramBento() {
               className="break-inside-avoid relative rounded-3xl overflow-hidden group border border-[#B0B7C3] cursor-pointer shadow-xs hover:shadow-md transition-shadow duration-300"
               style={{ height: card.height }}
             >
-              <Image
+              <Image data-pin-nopin="true"
                 src={card.image}
                 alt={card.alt}
                 fill

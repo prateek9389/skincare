@@ -58,7 +58,7 @@ export default function PromoScrub() {
           }}
           className="absolute w-[260px] sm:w-[340px] lg:w-[420px] aspect-square z-10 pointer-events-none drop-shadow-2xl"
         >
-          <Image
+          <Image data-pin-nopin="true"
             src="/cream-splash.png"
             alt="The Act premium body scrub cream splash"
             fill

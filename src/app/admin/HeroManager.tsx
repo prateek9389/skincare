@@ -111,7 +111,7 @@ export default function HeroManager({ searchQuery = "" }: { searchQuery?: string
                 </button>
                 <div className="relative w-full aspect-square bg-white rounded-xl mb-3 overflow-hidden border border-[#B0B7C3]">
                   {p.mainImage ? (
-                    <Image src={p.mainImage} alt={p.name} fill className="object-contain p-2" />
+                    <Image data-pin-nopin="true" src={p.mainImage} alt={p.name} fill className="object-contain p-2" />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full text-[10px] text-[#00A896]">No Image</div>
                   )}
@@ -152,7 +152,7 @@ export default function HeroManager({ searchQuery = "" }: { searchQuery?: string
                 {availableToAdd.map((p, idx) => (
                   <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: idx * 0.05 }} className="relative bg-white rounded-2xl border border-[#B0B7C3] hover:border-[#0D3C6A] overflow-hidden group p-3 flex items-center gap-3 cursor-pointer transition-all hover:shadow-md" onClick={() => addProductToCategory(p)}>
                     <div className="relative w-12 h-12 rounded-lg bg-[#FAF6F0] border border-[#B0B7C3] overflow-hidden shrink-0">
-                      {p.mainImage && <Image src={p.mainImage} alt={p.name} fill className="object-contain p-1" />}
+                      {p.mainImage && <Image data-pin-nopin="true" src={p.mainImage} alt={p.name} fill className="object-contain p-1" />}
                     </div>
                     <div className="flex-grow min-w-0">
                       <h4 className="text-xs font-semibold text-[#0D3C6A] line-clamp-1">{p.name}</h4>

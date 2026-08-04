@@ -127,7 +127,7 @@ export default function ShopPage() {
       }
       return [...prev, { product, quantity: 1 }];
     });
-    setToastMessage(`âœ¨ ${product.name} added to bag.`);
+    setToastMessage(`✨ ${product.name} added to bag.`);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -463,7 +463,7 @@ export default function ShopPage() {
                   </span>
                 </div>
                 <div className="relative w-28 h-28 shrink-0 bg-neutral-900 rounded-2xl overflow-hidden p-2 border border-neutral-800">
-                  <Image
+                  <Image data-pin-nopin="true"
                     src="/category-serums.png"
                     alt="New Serums Offer"
                     fill
@@ -493,7 +493,7 @@ export default function ShopPage() {
                   </span>
                 </div>
                 <div className="relative w-28 h-28 shrink-0 bg-neutral-900 rounded-2xl overflow-hidden p-2 border border-neutral-800">
-                  <Image
+                  <Image data-pin-nopin="true"
                     src="/instagram-blue-jar.png"
                     alt="Bestselling Ointment"
                     fill
@@ -612,7 +612,7 @@ export default function ShopPage() {
                     >
                       {/* Product Card Image Container */}
                       <Link href={`/product/${product.id}`} className="block relative w-full aspect-[4/5] bg-[#FAF6F0] rounded-2xl overflow-hidden p-6 border border-[#B0B7C3]/30 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer">
-                        <Image
+                        <Image data-pin-nopin="true"
                           src={product.image}
                           alt={product.name}
                           fill

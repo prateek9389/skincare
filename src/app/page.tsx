@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
@@ -124,7 +124,7 @@ export default function Home() {
       return [...prev, { product, quantity: 1 }];
     });
 
-    setToastMessage(`âœ¨ ${product.name} added to bag.`);
+    setToastMessage(`✨ ${product.name} added to bag.`);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -193,7 +193,7 @@ export default function Home() {
         <HorizontalScrollGallery />
         <PromoScrub />
         <InstagramBento />
-        <FullscreenExpansion />
+        <FullscreenExpansion onAddToCart={handleAddToCart} />
         <Newsletter />
       </main>
 

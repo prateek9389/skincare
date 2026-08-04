@@ -39,7 +39,7 @@ const ImageUpload = ({ label, value, onChange }: { label: string; value: string;
       <div className="flex items-center gap-4">
         {value && (
           <div className="relative w-16 h-16 rounded-xl border border-[#B0B7C3] overflow-hidden bg-white shrink-0">
-            <Image src={value} alt="Upload preview" fill className="object-cover" />
+            <Image data-pin-nopin="true" src={value} alt="Upload preview" fill className="object-cover" />
           </div>
         )}
         <label className="flex-grow flex items-center justify-center px-4 py-3 bg-white border border-dashed border-[#B0B7C3] rounded-xl hover:bg-[#FAF6F0] hover:border-[#0D3C6A] cursor-pointer transition-colors text-xs text-[#0D3C6A] font-bold uppercase tracking-widest">
@@ -134,7 +134,7 @@ export default function CategoryManager({ searchQuery = "" }: { searchQuery?: st
             <textarea value={currentCategory.description || ""} onChange={(e) => setCurrentCategory({ ...currentCategory, description: e.target.value })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E] min-h-[100px]" placeholder="Brief description of this category..." />
           </div>
           <div>
-            <ImageUpload label="Category Image" value={currentCategory.image || ""} onChange={(url) => setCurrentCategory({ ...currentCategory, image: url })} />
+            <Image data-pin-nopin="true"Upload label="Category Image" value={currentCategory.image || ""} onChange={(url) => setCurrentCategory({ ...currentCategory, image: url })} />
           </div>
           
           <div className="pt-6 border-t border-[#B0B7C3]">
@@ -170,7 +170,7 @@ export default function CategoryManager({ searchQuery = "" }: { searchQuery?: st
               <div className="relative h-48 bg-[#FAF6F0] border-b border-[#B0B7C3] flex items-center justify-center p-4">
                 {cat.image ? (
                   <div className="relative w-full h-full">
-                    <Image src={cat.image} alt={cat.name} fill className="object-cover rounded-xl" />
+                    <Image data-pin-nopin="true" src={cat.image} alt={cat.name} fill className="object-cover rounded-xl" />
                   </div>
                 ) : (
                   <span className="text-[#BCAE9E] font-serif italic text-lg">No Image</span>
