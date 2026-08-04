@@ -2,15 +2,17 @@
 
 import React, { useRef } from "react";
 import { motion, useScroll, useVelocity, useTransform, useSpring } from "framer-motion";
+import { useStoreSettings } from "@/lib/useStoreSettings";
 
 interface ServiceCardProps {
   title: string;
   videoSrc?: string;
   isWhiteBg?: boolean;
   className?: string;
+  link?: string;
 }
 
-function ServiceCard({ title, videoSrc, isWhiteBg = false, className = "" }: ServiceCardProps) {
+function ServiceCard({ title, videoSrc, isWhiteBg = false, className = "", link }: ServiceCardProps) {
   const cardVariants = {
     hidden: { opacity: 0, y: 40 },
     show: { 
@@ -20,7 +22,7 @@ function ServiceCard({ title, videoSrc, isWhiteBg = false, className = "" }: Ser
     }
   };
 
-  return (
+  const content = (
     <motion.div
       variants={cardVariants}
       className={`relative rounded-3xl overflow-hidden group border border-[#B0B7C3] shadow-xs hover:shadow-lg transition-all duration-500 flex flex-col justify-between p-6 select-none ${
@@ -65,9 +67,21 @@ function ServiceCard({ title, videoSrc, isWhiteBg = false, className = "" }: Ser
       </div>
     </motion.div>
   );
+
+  if (link) {
+    return (
+      <a href={link} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+        {content}
+      </a>
+    );
+  }
+
+  return content;
 }
 
 export default function ServicesBento() {
+  const { settings } = useStoreSettings();
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -150,6 +164,7 @@ export default function ServicesBento() {
               title="Explore more on Instagram" 
               isWhiteBg={true}
               className="h-[180px] md:h-[220px]"
+              link={settings.footerSocialInstagram || "https://instagram.com"}
             />
 
           </div>

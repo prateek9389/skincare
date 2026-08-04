@@ -59,6 +59,16 @@ export default function ShopPage() {
   const sortRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const category = params.get("category");
+      if (category) {
+        setSelectedCategories([category]);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
         setIsSortOpen(false);
@@ -445,12 +455,12 @@ export default function ShopPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
               {/* Banner 1 */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
                 whileHover={{ y: -5, scale: 1.015 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="bg-black text-white rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6 border border-neutral-950 hover:border-neutral-800 shadow-xl cursor-pointer"
+                onClick={() => setSelectedCategories(["Serums"])}
               >
                 <div className="space-y-3 text-left">
                   <span className="text-[8px] font-bold tracking-[0.2em] text-[#00A896] uppercase">New Collection</span>
@@ -475,12 +485,12 @@ export default function ShopPage() {
 
               {/* Banner 2 */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
                 whileHover={{ y: -5, scale: 1.015 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="bg-black text-white rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6 border border-neutral-950 hover:border-neutral-800 shadow-xl cursor-pointer"
+                onClick={() => setSelectedCategories(["Moisturizers"])}
               >
                 <div className="space-y-3 text-left">
                   <span className="text-[8px] font-bold tracking-[0.2em] text-[#00A896] uppercase">Bestsellers</span>
@@ -560,11 +570,11 @@ export default function ShopPage() {
                 <AnimatePresence>
                   {isSortOpen && (
                     <motion.div 
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-full right-0 mt-2 w-48 bg-[#FAF6F0] border border-[#B0B7C3]/60 shadow-xl z-50 rounded-2xl overflow-hidden"
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute top-full right-0 mt-3 w-56 bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] z-50 rounded-2xl p-2"
                     >
                       {[
                         { value: 'default', label: 'Default' },
@@ -578,9 +588,14 @@ export default function ShopPage() {
                             setSortBy(option.value);
                             setIsSortOpen(false);
                           }}
-                          className={`px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors border-b border-[#B0B7C3]/20 last:border-0 ${sortBy === option.value ? 'bg-white text-[#00A896]' : 'text-[#0D3C6A] hover:bg-white/60'}`}
+                          className={`group flex items-center justify-between px-4 py-3 text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-all duration-300 rounded-xl mb-1 last:mb-0 ${sortBy === option.value ? 'bg-[#0D3C6A] text-white shadow-md' : 'text-[#0D3C6A] hover:bg-black/5'}`}
                         >
-                          {option.label}
+                          <span className={`transition-transform duration-300 ${sortBy !== option.value ? 'group-hover:translate-x-1' : ''}`}>{option.label}</span>
+                          {sortBy === option.value && (
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
                         </div>
                       ))}
                     </motion.div>

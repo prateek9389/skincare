@@ -7,7 +7,6 @@ import CategoryGrid from "@/components/CategoryGrid";
 import ProductGrid from "@/components/ProductGrid";
 import ServicesBento from "@/components/ServicesBento";
 import HorizontalScrollGallery from "@/components/HorizontalScrollGallery";
-import PromoScrub from "@/components/PromoScrub";
 import InstagramBento from "@/components/InstagramBento";
 import FullscreenExpansion from "@/components/FullscreenExpansion";
 import Newsletter from "@/components/Newsletter";
@@ -191,7 +190,6 @@ export default function Home() {
         <ProductGrid onAddToCart={handleAddToCart} />
         <ServicesBento />
         <HorizontalScrollGallery />
-        <PromoScrub />
         <InstagramBento />
         <FullscreenExpansion onAddToCart={handleAddToCart} />
         <Newsletter />

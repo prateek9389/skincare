@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
+import Link from "next/link";
 
 interface Category {
   id?: string;
@@ -67,7 +68,8 @@ export default function CategoryGrid() {
         {/* Scrolling Track */}
         <div className="flex w-max gap-6 px-6 animate-marquee hover:[animation-play-state:paused]">
           {marqueeItems.map((category, idx) => (
-            <button
+            <Link
+              href={`/shop?category=${encodeURIComponent(category.name)}`}
               key={`${category.name}-${idx}`}
               className="relative aspect-[3/4] w-[140px] sm:w-[170px] rounded-2xl overflow-hidden group border border-[#B0B7C3]/40 shadow-xs hover:shadow-md transition-all duration-500 cursor-pointer shrink-0"
             >
@@ -100,7 +102,7 @@ export default function CategoryGrid() {
                   </svg>
                 </div>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
 

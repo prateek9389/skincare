@@ -103,12 +103,7 @@ const HorizontalProductCarousel = ({
               transition={{ duration: 0.6 }}
               className={`snap-start flex-shrink-0 flex flex-col group relative w-[60vw] sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)] ${cardBgClass}`}
             >
-              {/* Special Tag for Featured */}
-              {styleVariant === "featured" && product.tag && (
-                <div className="absolute top-3 right-3 z-10 bg-[#0D3C6A] text-white text-[9px] font-bold tracking-widest px-2 py-1 rounded-sm uppercase">
-                  {product.tag}
-                </div>
-              )}
+              {/* Special Tag for Featured removed as per request */}
             
               {/* Product Image */}
               <Link href={`/product/${product.id}`} className={`block w-full aspect-[4/5] relative cursor-pointer ${cardImageBgClass}`}>
