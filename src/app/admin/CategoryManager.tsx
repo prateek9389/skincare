@@ -134,7 +134,7 @@ export default function CategoryManager({ searchQuery = "" }: { searchQuery?: st
             <textarea value={currentCategory.description || ""} onChange={(e) => setCurrentCategory({ ...currentCategory, description: e.target.value })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E] min-h-[100px]" placeholder="Brief description of this category..." />
           </div>
           <div>
-            <Image data-pin-nopin="true"Upload label="Category Image" value={currentCategory.image || ""} onChange={(url) => setCurrentCategory({ ...currentCategory, image: url })} />
+            <ImageUpload label="Category Image" value={currentCategory.image || ""} onChange={(url) => setCurrentCategory({ ...currentCategory, image: url })} />
           </div>
           
           <div className="pt-6 border-t border-[#B0B7C3]">

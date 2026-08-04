@@ -349,7 +349,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                       </div>
                       {existingQty && (
                         <div className="border-t border-[#BCAE9E] pt-3">
-                          <Image data-pin-nopin="true"Upload
+                          <ImageUpload
                             label={`${label} Image`}
                             value={existingQty.image || ""}
                             onChange={(url) => {
@@ -461,8 +461,8 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-              <Image data-pin-nopin="true"Upload label="Main Product Image" value={currentProduct.mainImage} onChange={(url) => setCurrentProduct({ ...currentProduct, mainImage: url })} />
-              <Image data-pin-nopin="true"Upload label="Texture/Smear Image (Center Section)" value={currentProduct.textureImage} onChange={(url) => setCurrentProduct({ ...currentProduct, textureImage: url })} />
+              <ImageUpload label="Main Product Image" value={currentProduct.mainImage} onChange={(url) => setCurrentProduct({ ...currentProduct, mainImage: url })} />
+              <ImageUpload label="Texture/Smear Image (Center Section)" value={currentProduct.textureImage} onChange={(url) => setCurrentProduct({ ...currentProduct, textureImage: url })} />
             </div>
           </section>
 
@@ -474,12 +474,12 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                 <div key={idx} className="bg-[#FAF6F0]/50 p-6 rounded-2xl border border-[#B0B7C3] space-y-4">
                   <h4 className="text-xs font-bold uppercase tracking-widest text-[#0D3C6A]">Slide {idx + 1}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Image data-pin-nopin="true"Upload label="Left Model Image" value={slide.leftImage} onChange={(url) => {
+                    <ImageUpload label="Left Model Image" value={slide.leftImage} onChange={(url) => {
                       const newSlides = [...currentProduct.carouselSlides];
                       newSlides[idx].leftImage = url;
                       setCurrentProduct({ ...currentProduct, carouselSlides: newSlides });
                     }} />
-                    <Image data-pin-nopin="true"Upload label="Right Product Image" value={slide.rightImage} onChange={(url) => {
+                    <ImageUpload label="Right Product Image" value={slide.rightImage} onChange={(url) => {
                       const newSlides = [...currentProduct.carouselSlides];
                       newSlides[idx].rightImage = url;
                       setCurrentProduct({ ...currentProduct, carouselSlides: newSlides });
@@ -560,7 +560,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                 </div>
               </div>
               <div>
-                <Image data-pin-nopin="true"Upload label="Side Image" value={currentProduct.bottomSection.image} onChange={(url) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, image: url }})} />
+                <ImageUpload label="Side Image" value={currentProduct.bottomSection.image} onChange={(url) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, image: url }})} />
               </div>
             </div>
           </section>
@@ -579,7 +579,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                     newGallery.splice(idx, 1);
                     setCurrentProduct({ ...currentProduct, gallery: newGallery });
                   }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-100 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs z-10 hover:bg-red-500 hover:text-white">&times;</button>
-                  <Image data-pin-nopin="true"Upload label={`Gallery Image ${idx + 1}`} value={img} onChange={(url) => {
+                  <ImageUpload label={`Gallery Image ${idx + 1}`} value={img} onChange={(url) => {
                     const newGallery = [...currentProduct.gallery];
                     newGallery[idx] = url;
                     setCurrentProduct({ ...currentProduct, gallery: newGallery });
