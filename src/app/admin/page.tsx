@@ -1337,7 +1337,7 @@ export default function AdminPanel() {
                     </Card>
                   </div>
                 );
-              })}
+              })()}
 
               {/* ============================ DISCOUNTS ============================ */}
               {activeSection === "Discounts" && (
