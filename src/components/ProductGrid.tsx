@@ -28,6 +28,8 @@ const HorizontalProductCarousel = ({
   styleVariant?: "default" | "featured" | "essentials";
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [selectedQuantities, setSelectedQuantities] = useState<Record<string, { label: string, price: number, image?: string }>>({});
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Define styles based on variant
   const bgClass =
@@ -108,7 +110,7 @@ const HorizontalProductCarousel = ({
               {/* Product Image */}
               <Link href={`/product/${product.id}`} className={`block w-full aspect-[4/5] relative cursor-pointer ${cardImageBgClass}`}>
                 <Image data-pin-nopin="true"
-                  src={product.image}
+                  src={selectedQuantities[product.id]?.image || product.image}
                   alt={product.name}
                   fill
                   sizes="(max-w-640px) 50vw, (max-w-1024px) 33vw, 25vw"
@@ -122,11 +124,50 @@ const HorizontalProductCarousel = ({
                   <span className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-widest ${cardDescColor}`}>
                     {product.category}
                   </span>
-                  <Link href={`/product/${product.id}`} className="hover:opacity-70 block">
-                    <h3 className={`font-serif text-xs sm:text-sm font-semibold tracking-wide transition-colors line-clamp-1 ${cardTextColor}`}>
-                      {product.name}
-                    </h3>
-                  </Link>
+                  <div className="flex flex-row items-center justify-between gap-3">
+                    <Link href={`/product/${product.id}`} className="hover:opacity-70 flex-1 min-w-0">
+                      <h3 className={`font-serif text-xs sm:text-sm font-semibold tracking-wide transition-colors truncate ${cardTextColor}`}>
+                        {product.name}
+                      </h3>
+                    </Link>
+                    
+                    {product.quantities && product.quantities.length > 0 && (() => {
+                      const sizeOptions = product.quantities!.filter(q => !q.label.toLowerCase().includes("pack"));
+                      if (sizeOptions.length === 0) return null;
+                      return (
+                        <div className="inline-block relative flex-shrink-0" onMouseLeave={() => setOpenDropdownId(null)}>
+                          <button 
+                            onClick={(e) => { e.preventDefault(); setOpenDropdownId(openDropdownId === product.id ? null : product.id); }}
+                            className={`flex items-center justify-between bg-white/60 border ${openDropdownId === product.id ? 'border-[#0D3C6A]/50 shadow-sm bg-white' : 'border-[#B0B7C3]/60'} rounded-full pl-3.5 pr-2 py-1.5 min-w-[75px] text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#0D3C6A] hover:bg-white hover:border-[#0D3C6A]/50 transition-all duration-300`}
+                          >
+                            <span>{sizeOptions.find(o => o.label === selectedQuantities[product.id]?.label) ? selectedQuantities[product.id]?.label : sizeOptions[0]?.label}</span>
+                            <svg className={`w-3 h-3 opacity-80 ml-1.5 transition-transform duration-300 ${openDropdownId === product.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                          </button>
+                          
+                          <div className={`absolute top-full left-0 w-full bg-white border border-[#B0B7C3]/30 rounded-xl shadow-lg z-50 overflow-hidden origin-top transition-all duration-200 ${openDropdownId === product.id ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'}`}>
+                            {sizeOptions.map(q => (
+                              <button
+                                key={q.label}
+                                className={`w-full text-left px-3.5 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-colors ${
+                                  (selectedQuantities[product.id]?.label || sizeOptions[0]?.label) === q.label 
+                                    ? 'bg-[#FAF6F0] text-[#0D3C6A]' 
+                                    : 'text-[#0D3C6A]/80 hover:bg-[#FAF6F0]/50 hover:text-[#0D3C6A]'
+                                }`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSelectedQuantities(prev => ({ ...prev, [product.id]: q }));
+                                  setOpenDropdownId(null);
+                                }}
+                              >
+                                {q.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
                   <p className={`text-[10px] sm:text-[11px] leading-relaxed tracking-wide font-light line-clamp-2 ${cardDescColor}`}>
                     {product.description}
                   </p>
@@ -134,12 +175,26 @@ const HorizontalProductCarousel = ({
 
                 <div className="flex items-center justify-between pt-2">
                   <span className={`text-xs sm:text-sm font-bold ${cardTextColor}`}>
-                    ₹{product.price.toFixed(2)}
+                    ₹{(selectedQuantities[product.id]?.price || (product.quantities && product.quantities.filter(q => !q.label.toLowerCase().includes("pack"))[0]?.price) || product.price).toFixed(2)}
                   </span>
                   
                   {/* Add Button */}
                   <button
-                    onClick={() => onAddToCart(product)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const activeQty = selectedQuantities[product.id] || (product.quantities && product.quantities.filter(q => !q.label.toLowerCase().includes("pack"))[0]);
+                      if (activeQty) {
+                         onAddToCart({
+                           ...product,
+                           id: `${product.id}-${activeQty.label}`,
+                           name: `${product.name} - ${activeQty.label}`,
+                           price: activeQty.price,
+                           image: activeQty.image || product.image
+                         });
+                      } else {
+                         onAddToCart(product);
+                      }
+                    }}
                     aria-label={`Add ${product.name} to cart`}
                     className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-300 transform active:scale-95 cursor-pointer shadow-xs ${buttonClass}`}
                   >
@@ -161,17 +216,24 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
   const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "products"), (snap) => {
-      const prods: Product[] = snap.docs.map(doc => {
-        const data = doc.data() as FirestoreProduct;
+    const unsub = onSnapshot(collection(db, "products"), (snapshot) => {
+      const prods = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as FirestoreProduct;
+        // Apply default quantities for migrated mock products that lack them
+        const defaultQuantities = [
+          { label: "25ml", price: 50 },
+          { label: "50ml", price: 100 },
+          { label: "100ml", price: 150 }
+        ];
         return {
-          id: data.id || doc.id,
-          name: data.name || "Unknown Product",
-          category: data.category || "Skincare",
+          id: docSnap.id,
+          name: data.name || "Unnamed Product",
+          category: data.category || "General",
           price: Number(data.price) || 0,
           description: data.description || "",
           image: data.mainImage || "/placeholder.png",
           tag: data.isFeatured ? "HIT" : undefined,
+          quantities: data.quantities && data.quantities.length > 0 ? data.quantities : defaultQuantities,
         };
       });
       setDynamicProducts(prods);

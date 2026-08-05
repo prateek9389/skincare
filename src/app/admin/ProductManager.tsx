@@ -17,6 +17,7 @@ export interface FirestoreProduct {
   description: string;
   mainImage: string;
   textureImage: string;
+  isFeatured?: boolean;
   carouselSlides: Array<{
     leftImage: string;
     rightImage: string;
@@ -38,10 +39,11 @@ export interface FirestoreProduct {
     text: string;
   }>;
   gallery: string[];
-  isFeatured?: boolean;
   heroCategory?: string;
   quantities?: { label: string; price: number; image?: string }[];
   _ingredientsString?: string;
+  returnPolicyAvailable?: boolean;
+  returnPolicyDays?: number;
 }
 
 const defaultProduct: FirestoreProduct = {
@@ -71,6 +73,8 @@ const defaultProduct: FirestoreProduct = {
   isFeatured: false,
   heroCategory: "Aesthetics",
   quantities: [],
+  returnPolicyAvailable: false,
+  returnPolicyDays: 30,
 };
 
 const ImageUpload = ({ label, value, onChange }: { label: string; value: string; onChange: (url: string) => void }) => {
@@ -121,7 +125,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
   const [isSaving, setIsSaving] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  
+
   // AI Modal State
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -165,15 +169,19 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
         alert("Please enter a product name first.");
         return;
       }
-      
-      const prodToSave = { 
-        ...currentProduct, 
+
+      const prodToSave = {
+        ...currentProduct,
         id: prodId,
         price: Number(currentProduct.price) || 0,
-        inventory: Number(currentProduct.inventory) || 0
+        inventory: Number(currentProduct.inventory) || 0,
+        quantities: currentProduct.quantities?.map(q => ({
+          ...q,
+          price: Number(q.price) || 0
+        })) || []
       };
       await setDoc(doc(db, "products", prodId), prodToSave);
-      
+
       alert("Product saved successfully!");
       setIsEditing(false);
     } catch (err) {
@@ -218,14 +226,14 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: aiPrompt })
       });
-      
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to generate");
       }
 
       const generatedData = await res.json();
-      
+
       // Merge with current product
       setCurrentProduct(prev => ({
         ...prev,
@@ -246,7 +254,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
           ...(generatedData.bottomSection || {})
         }
       }));
-      
+
       setIsAiModalOpen(false);
       setAiPrompt("");
       alert("Product details generated successfully! Please review the fields and add images.");
@@ -276,9 +284,9 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                     <stop offset="100%" stopColor="#F97316" />
                   </linearGradient>
                 </defs>
-                <path d="M10.5 2L12 8L18 9.5L12 11L10.5 17L9 11L3 9.5L9 8L10.5 2Z" fill="url(#aiSparkle)"/>
-                <path d="M18.5 14L19.25 16.5L22 17.25L19.25 18L18.5 20.5L17.75 18L15 17.25L17.75 16.5L18.5 14Z" fill="url(#aiSparkle)"/>
-                <path d="M4.5 16L5 17.5L6.5 18L5 18.5L4.5 20L4 18.5L2.5 18L4 17.5L4.5 16Z" fill="url(#aiSparkle)"/>
+                <path d="M10.5 2L12 8L18 9.5L12 11L10.5 17L9 11L3 9.5L9 8L10.5 2Z" fill="url(#aiSparkle)" />
+                <path d="M18.5 14L19.25 16.5L22 17.25L19.25 18L18.5 20.5L17.75 18L15 17.25L17.75 16.5L18.5 14Z" fill="url(#aiSparkle)" />
+                <path d="M4.5 16L5 17.5L6.5 18L5 18.5L4.5 20L4 18.5L2.5 18L4 17.5L4.5 16Z" fill="url(#aiSparkle)" />
               </svg>
               Auto-Fill with AI
             </button>
@@ -316,59 +324,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
             </div>
 
             <div className="mt-6 border-t border-[#B0B7C3] pt-6">
-              <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Multi-Pack Pricing (Optional)</label>
-              <p className="text-[10px] text-[#00A896] mb-4">Quickly add standard multi-pack options. Entering a price will automatically add it to the product.</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {[2, 3, 4].map(num => {
-                  const label = `Pack of ${num}`;
-                  const existingQty = currentProduct.quantities?.find(q => q.label === label);
-                  return (
-                    <div key={num} className="bg-[#FAF6F0] p-4 rounded-xl border border-[#B0B7C3] flex flex-col gap-4">
-                      <div>
-                        <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">{label} Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={existingQty?.price || ""}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            let newQ = [...(currentProduct.quantities || [])];
-                            if (isNaN(val) || val <= 0) {
-                              newQ = newQ.filter(q => q.label !== label);
-                            } else {
-                              const existing = newQ.find(q => q.label === label);
-                              if (existing) existing.price = val;
-                              else newQ.push({ label, price: val });
-                            }
-                            setCurrentProduct({ ...currentProduct, quantities: newQ });
-                          }}
-                          className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]"
-                          placeholder="Leave blank to disable"
-                        />
-                      </div>
-                      {existingQty && (
-                        <div className="border-t border-[#BCAE9E] pt-3">
-                          <ImageUpload
-                            label={`${label} Image`}
-                            value={existingQty.image || ""}
-                            onChange={(url) => {
-                              let newQ = [...(currentProduct.quantities || [])];
-                              const existing = newQ.find(q => q.label === label);
-                              if (existing) {
-                                existing.image = url;
-                                setCurrentProduct({ ...currentProduct, quantities: newQ });
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              <div className="flex justify-between items-center mb-4 pt-4 border-t border-[#B0B7C3]/50">
+              <div className="flex justify-between items-center mb-4">
                 <div>
                   <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest">Custom Size / Quantity Options</label>
                   <p className="text-[10px] text-[#00A896] mt-1">Add custom options like "50ml", "100ml".</p>
@@ -381,51 +337,133 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                   + Add Option
                 </button>
               </div>
-              
-              <div className="space-y-3">
-                {currentProduct.quantities?.map((qty, idx) => (
-                  <div key={idx} className="flex items-center gap-4 bg-[#FAF6F0] p-3 rounded-xl border border-[#B0B7C3]">
-                    <div className="flex-1">
-                      <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Label (e.g., 50ml)</label>
-                      <input 
-                        type="text" 
-                        value={qty.label}
-                        onChange={(e) => {
-                          const newQ = [...(currentProduct.quantities || [])];
-                          newQ[idx].label = e.target.value;
-                          setCurrentProduct({ ...currentProduct, quantities: newQ });
-                        }}
-                        className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]" 
-                        placeholder="e.g. 50ml"
-                      />
+
+              <div className="space-y-3 mb-6">
+                {currentProduct.quantities?.map((qty, idx) => {
+                  if (qty.label.toLowerCase().includes("pack")) return null;
+                  return (
+                    <div key={idx} className="flex flex-col gap-4 bg-[#FAF6F0] p-4 rounded-xl border border-[#B0B7C3]">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Label (e.g., 50ml)</label>
+                          <input
+                            type="text"
+                            value={qty.label}
+                            onChange={(e) => {
+                              const newQ = [...(currentProduct.quantities || [])];
+                              newQ[idx].label = e.target.value;
+                              setCurrentProduct({ ...currentProduct, quantities: newQ });
+                            }}
+                            className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]"
+                            placeholder="e.g. 50ml"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Price</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={qty.price === 0 ? "" : qty.price}
+                            onChange={(e) => {
+                              const newQ = [...(currentProduct.quantities || [])];
+                              newQ[idx].price = e.target.value as any;
+                              setCurrentProduct({ ...currentProduct, quantities: newQ });
+                            }}
+                            className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newQ = [...(currentProduct.quantities || [])];
+                            newQ.splice(idx, 1);
+                            setCurrentProduct({ ...currentProduct, quantities: newQ });
+                          }}
+                          className="mt-4 w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-colors"
+                        >
+                          &times;
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Price</label>
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={qty.price}
-                        onChange={(e) => {
-                          const newQ = [...(currentProduct.quantities || [])];
-                          newQ[idx].price = parseFloat(e.target.value) || 0;
-                          setCurrentProduct({ ...currentProduct, quantities: newQ });
-                        }}
-                        className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]" 
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newQ = [...(currentProduct.quantities || [])];
-                        newQ.splice(idx, 1);
-                        setCurrentProduct({ ...currentProduct, quantities: newQ });
-                      }}
-                      className="mt-4 w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-colors"
-                    >
-                      &times;
-                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-4 border-t border-[#B0B7C3]/50">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Multi-Pack Pricing (Optional)</label>
+                    <p className="text-[10px] text-[#00A896]">Add custom multi-packs and specify size/volume (e.g., "Pack of 2 - 50ml").</p>
                   </div>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentProduct(prev => ({ ...prev, quantities: [...(prev.quantities || []), { label: "Pack of 2 - ", price: 0 }] }))}
+                    className="bg-[#0D3C6A] text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors"
+                  >
+                    + Add Multi-Pack
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {currentProduct.quantities?.map((qty, idx) => {
+                    if (!qty.label.toLowerCase().includes("pack")) return null;
+                    return (
+                      <div key={idx} className="bg-[#FAF6F0] p-4 rounded-xl border border-[#B0B7C3] flex flex-col gap-4">
+                        <div className="flex gap-4 items-start">
+                          <div className="flex-1">
+                            <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Pack Label (e.g., Pack of 2 - 50ml)</label>
+                            <input
+                              type="text"
+                              value={qty.label}
+                              onChange={(e) => {
+                                const newQ = [...(currentProduct.quantities || [])];
+                                newQ[idx].label = e.target.value;
+                                setCurrentProduct({ ...currentProduct, quantities: newQ });
+                              }}
+                              className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]"
+                            />
+                          </div>
+                          <div className="w-1/3">
+                            <label className="block text-[9px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Price</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={qty.price === 0 ? "" : qty.price}
+                              onChange={(e) => {
+                                const newQ = [...(currentProduct.quantities || [])];
+                                newQ[idx].price = e.target.value as any;
+                                setCurrentProduct({ ...currentProduct, quantities: newQ });
+                              }}
+                              className="w-full px-3 py-2 bg-white border border-[#B0B7C3] rounded-lg text-xs focus:outline-none focus:border-[#0D3C6A]"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newQ = [...(currentProduct.quantities || [])];
+                              newQ.splice(idx, 1);
+                              setCurrentProduct({ ...currentProduct, quantities: newQ });
+                            }}
+                            className="mt-4 w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-colors"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                        <div className="border-t border-[#BCAE9E] pt-3">
+                          <ImageUpload
+                            label={`${qty.label || 'Multi-Pack'} Image`}
+                            value={qty.image || ""}
+                            onChange={(url) => {
+                              const newQ = [...(currentProduct.quantities || [])];
+                              newQ[idx].image = url;
+                              setCurrentProduct({ ...currentProduct, quantities: newQ });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
 
@@ -451,15 +489,15 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                     <option value="Care">Care</option>
                   </select>
                 )}
-                <input 
-                  type="checkbox" 
-                  checked={currentProduct.isFeatured || false} 
+                <input
+                  type="checkbox"
+                  checked={currentProduct.isFeatured || false}
                   onChange={(e) => setCurrentProduct({ ...currentProduct, isFeatured: e.target.checked, heroCategory: e.target.checked ? (currentProduct.heroCategory || "Aesthetics") : currentProduct.heroCategory })}
                   className="w-5 h-5 accent-[#0D3C6A] cursor-pointer shrink-0"
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
               <ImageUpload label="Main Product Image" value={currentProduct.mainImage} onChange={(url) => setCurrentProduct({ ...currentProduct, mainImage: url })} />
               <ImageUpload label="Texture/Smear Image (Center Section)" value={currentProduct.textureImage} onChange={(url) => setCurrentProduct({ ...currentProduct, textureImage: url })} />
@@ -515,8 +553,8 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 {products.filter(p => p.id !== currentProduct.id).map(p => (
                   <label key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${currentProduct.bestSellerIds.includes(p.id) ? "bg-[#0D3C6A] border-black text-white" : "bg-[#FAF6F0] border-[#B0B7C3] text-[#0D3C6A] hover:border-[#BCAE9E]"}`}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="hidden"
                       checked={currentProduct.bestSellerIds.includes(p.id)}
                       onChange={(e) => {
@@ -548,19 +586,19 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
               <div className="space-y-6">
                 <div>
                   <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Title</label>
-                  <input type="text" value={currentProduct.bottomSection.title} onChange={(e) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, title: e.target.value }})} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
+                  <input type="text" value={currentProduct.bottomSection.title} onChange={(e) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, title: e.target.value } })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Description</label>
-                  <textarea value={currentProduct.bottomSection.description} onChange={(e) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, description: e.target.value }})} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E] min-h-[80px]" />
+                  <textarea value={currentProduct.bottomSection.description} onChange={(e) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, description: e.target.value } })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E] min-h-[80px]" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">Tags (comma separated)</label>
-                  <input type="text" value={currentProduct.bottomSection.tags.join(", ")} onChange={(e) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, tags: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }})} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" placeholder="beauty, care, comfort" />
+                  <input type="text" value={currentProduct.bottomSection.tags.join(", ")} onChange={(e) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, tags: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } })} className="w-full px-4 py-3 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl text-sm focus:outline-none focus:border-[#BCAE9E]" placeholder="beauty, care, comfort" />
                 </div>
               </div>
               <div>
-                <ImageUpload label="Side Image" value={currentProduct.bottomSection.image} onChange={(url) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, image: url }})} />
+                <ImageUpload label="Side Image" value={currentProduct.bottomSection.image} onChange={(url) => setCurrentProduct({ ...currentProduct, bottomSection: { ...currentProduct.bottomSection, image: url } })} />
               </div>
             </div>
           </section>
@@ -640,6 +678,42 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
             </div>
           </section>
 
+          {/* 7. Return Policy */}
+          <section className="space-y-6">
+            <div className="flex justify-between items-end border-b border-[#B0B7C3] pb-2">
+              <h3 className="font-serif text-lg text-[#00A896]">7. Return Policy</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#FAF6F0]/50 p-6 rounded-2xl border border-[#B0B7C3]">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="returnPolicyAvailable"
+                  checked={currentProduct.returnPolicyAvailable || false}
+                  onChange={(e) => setCurrentProduct({ ...currentProduct, returnPolicyAvailable: e.target.checked })}
+                  className="w-4 h-4 text-[#0D3C6A] border-[#B0B7C3] rounded focus:ring-[#00A896]"
+                />
+                <label htmlFor="returnPolicyAvailable" className="text-sm font-bold text-[#0D3C6A] uppercase tracking-widest cursor-pointer">
+                  Enable Return Policy
+                </label>
+              </div>
+
+              {currentProduct.returnPolicyAvailable && (
+                <div>
+                  <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1.5">
+                    Return Window (Days)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={currentProduct.returnPolicyDays || ""}
+                    onChange={(e) => setCurrentProduct({ ...currentProduct, returnPolicyDays: e.target.value ? parseInt(e.target.value) : 0 })}
+                    className="w-full px-4 py-2 bg-white border border-[#B0B7C3] rounded-lg text-sm focus:outline-none focus:border-[#5BA6D6]"
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+
           <div className="pt-8 border-t border-[#B0B7C3] flex justify-end gap-4">
             <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest text-[#00A896] hover:bg-[#FAF6F0] transition-colors">
               Cancel
@@ -656,8 +730,8 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
             <div className="bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-6">
               <h3 className="font-serif text-xl text-[#0D3C6A]">Generate Product Details</h3>
               <p className="text-xs text-[#00A896]">Describe the product you want to create, and our AI will automatically fill in all the text fields.</p>
-              
-              <textarea 
+
+              <textarea
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="e.g. A luxurious anti-aging night cream with retinol..."
@@ -702,6 +776,28 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
           <span className="text-[9px] text-[#00A896] uppercase tracking-wider block mt-0.5">Manage your Guna Life catalog</span>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={async () => {
+            if (!confirm("Add 25ml, 50ml, 100ml options to all products?")) return;
+            try {
+              const updates = products.map(p => {
+                const bp = Number(p.price) || 0;
+                const prodRef = doc(db, "products", p.id);
+                return setDoc(prodRef, {
+                  quantities: [
+                    { label: "25ml", price: bp, image: p.mainImage },
+                    { label: "50ml", price: Math.round(bp * 1.8), image: p.mainImage },
+                    { label: "100ml", price: Math.round(bp * 3), image: p.mainImage }
+                  ]
+                }, { merge: true });
+              });
+              await Promise.all(updates);
+              alert("Quantities added to all products!");
+            } catch (e: any) {
+              alert(e.message);
+            }
+          }} className="px-4 py-1.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold uppercase tracking-wider transition-all hover:bg-red-200">
+            Migrate Quantities
+          </button>
           <div className="flex items-center bg-[#FAF6F0] rounded-full p-1 border border-[#B0B7C3]">
             <button onClick={() => setViewMode("card")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === "card" ? "bg-[#0D3C6A] text-white" : "text-[#00A896] hover:text-[#0D3C6A]"}`}>Grid</button>
             <button onClick={() => setViewMode("list")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === "list" ? "bg-[#0D3C6A] text-white" : "text-[#00A896] hover:text-[#0D3C6A]"}`}>List</button>
@@ -736,8 +832,8 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
               <div className="p-4 space-y-2 text-left bg-white border-t border-[#B0B7C3]">
                 <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold block">{p.category}</span>
                 <h4 className="text-sm font-semibold text-[#0D3C6A] leading-tight line-clamp-1">{p.name}</h4>
-                <div className="flex items-end justify-between pt-2">
-                  <span className="text-sm font-bold text-[#0D3C6A]">₹{p.price}</span>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-sm font-bold text-[#0D3C6A]">₹{p.price.toFixed(2)}</span>
                   <div className="flex flex-col items-end gap-1.5">
                     <span className="text-[9px] font-bold text-[#00A896] uppercase tracking-wider">{p.inventory || 0} units</span>
                     <span className="text-[8px] font-bold uppercase tracking-widest bg-[#F0FAED] text-green-700 px-2 py-1 rounded-full border border-[#D6EAD2]">Active</span>
@@ -785,7 +881,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                       </div>
                     </td>
                     <td className="p-4 text-xs text-[#00A896]">{prod.category}</td>
-                    <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price}</td>
+                    <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price.toFixed(2)}</td>
                     <td className="p-4 text-xs font-bold text-[#0D3C6A]">{prod.inventory || 0} units</td>
                     <td className="p-4 pr-6 text-right space-x-3">
                       <button onClick={(e) => { e.stopPropagation(); toggleFeatured(prod); }} className={`text-xs font-bold ${prod.isFeatured ? "text-yellow-500 hover:text-yellow-600" : "text-[#BCAE9E] hover:text-[#0D3C6A]"} transition-colors uppercase tracking-widest`} title={prod.isFeatured ? "Remove from Featured" : "Mark as Featured"}>★</button>

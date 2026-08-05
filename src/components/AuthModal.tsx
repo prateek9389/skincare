@@ -127,7 +127,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialEmail = "
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
               <div className="space-y-1">
                 <label className="text-[10px] uppercase tracking-wider text-[#00A896]">Email Address</label>
                 <input
@@ -137,6 +137,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialEmail = "
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#0D3C6A] focus:outline-none transition-all"
                   placeholder="name@example.com"
+                  autoComplete="off"
                 />
               </div>
 
@@ -149,6 +150,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialEmail = "
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#0D3C6A] focus:outline-none transition-all"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                 />
               </div>
 

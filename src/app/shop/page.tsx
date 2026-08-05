@@ -52,7 +52,7 @@ export default function ShopPage() {
   const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>([]);
   const [selectedScents, setSelectedScents] = useState<string[]>([]);
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
-  
+
   // Sort state
   const [sortBy, setSortBy] = useState<string>("default");
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -199,7 +199,9 @@ export default function ShopPage() {
           description: data.description || "",
           image: data.mainImage || "/placeholder.png",
           tag: data.isFeatured ? "HIT" : undefined,
-          ingredients: data.ingredients || []
+          ingredients: data.ingredients || [],
+          returnPolicyAvailable: data.returnPolicyAvailable,
+          returnPolicyDays: data.returnPolicyDays
         };
       });
       setDynamicProducts(prods);
@@ -236,7 +238,7 @@ export default function ShopPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#5BA6D6] selection:text-[#0D3C6A] relative overflow-x-hidden">
-      
+
       {/* Toast Alert */}
       <AnimatePresence>
         {toastMessage && (
@@ -259,7 +261,7 @@ export default function ShopPage() {
       />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 select-none">
-        
+
         {/* Subtitle Breadcrumb */}
         <div className="flex justify-between items-center text-[10px] tracking-[0.3em] text-[#00A896] uppercase mb-8 border-b border-[#B0B7C3] pb-4">
           <span>07 CATALOG</span>
@@ -270,10 +272,10 @@ export default function ShopPage() {
 
         {/* 2. CATALOG FILTER & GRID ROW */}
         <div className="flex flex-col lg:flex-row gap-12 items-start mt-12">
-          
+
           {/* A. SIDEBAR FILTERS (Left Panel) */}
           <aside className="w-full lg:w-64 space-y-6 lg:sticky lg:top-28 shrink-0 text-left">
-            
+
             {/* Category Filter */}
             <div className="border-b border-[#B0B7C3] pb-4">
               <button
@@ -285,7 +287,7 @@ export default function ShopPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              
+
               {expandedSections.category && (
                 <div className="mt-4 space-y-3">
                   {CATEGORIES.map((cat) => (
@@ -364,7 +366,7 @@ export default function ShopPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              
+
               {expandedSections.ingredients && (
                 <div className="mt-4 space-y-3">
                   {INGREDIENTS.map((ing) => (
@@ -450,7 +452,7 @@ export default function ShopPage() {
 
           {/* B. MAIN CATALOG DISPLAY (Right Panel) */}
           <div className="flex-grow w-full space-y-8">
-            
+
             {/* Special Offers Banners - Animated & Dark */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
               {/* Banner 1 */}
@@ -513,10 +515,10 @@ export default function ShopPage() {
                 </div>
               </motion.div>
             </div>
-            
+
             {/* Header filters details & Sort */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#B0B7C3]">
-              
+
               {/* Filter breadcrumb tags */}
               <div className="flex flex-wrap gap-2 items-center text-xs">
                 {(selectedCategories.length > 0 || selectedIngredients.length > 0 || selectedSkinTypes.length > 0 || selectedScents.length > 0 || selectedConcerns.length > 0) && (
@@ -554,22 +556,22 @@ export default function ShopPage() {
               {/* Sort By Dropdown */}
               <div className="flex items-center gap-2 text-xs text-[#00A896] self-end sm:self-auto relative" ref={sortRef}>
                 <span>SORT BY</span>
-                <div 
+                <div
                   className="bg-transparent text-[#0D3C6A] font-semibold py-1 pr-1 cursor-pointer uppercase tracking-wider text-[11px] flex items-center justify-between min-w-[130px] border-b border-transparent hover:border-[#B0B7C3] transition-colors"
                   onClick={() => setIsSortOpen(!isSortOpen)}
                 >
-                  {sortBy === 'default' ? 'Default' : 
-                   sortBy === 'price-asc' ? 'Price: Low to High' :
-                   sortBy === 'price-desc' ? 'Price: High to Low' :
-                   sortBy === 'name-asc' ? 'Name: A-Z' : 'Default'}
+                  {sortBy === 'default' ? 'Default' :
+                    sortBy === 'price-asc' ? 'Price: Low to High' :
+                      sortBy === 'price-desc' ? 'Price: High to Low' :
+                        sortBy === 'name-asc' ? 'Name: A-Z' : 'Default'}
                   <svg className={`w-3.5 h-3.5 ml-2 transition-transform duration-200 ${isSortOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
-                
+
                 <AnimatePresence>
                   {isSortOpen && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -658,7 +660,7 @@ export default function ShopPage() {
                             {product.description}
                           </p>
                         </div>
-                        
+
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-sm font-bold text-[#0D3C6A] whitespace-nowrap">
                             ₹{product.price.toFixed(2)}

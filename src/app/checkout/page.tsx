@@ -177,7 +177,7 @@ export default function CheckoutPage() {
     const rateString = appliedCoupon.discount || "0";
     const rateMatch = rateString.match(/(\d+)/);
     const rate = rateMatch ? parseInt(rateMatch[0], 10) / 100 : 0;
-    
+
     if (appliedCoupon.productId === "all") {
       discountAmount = subtotal * rate;
     } else {
@@ -210,7 +210,7 @@ export default function CheckoutPage() {
       setDiscountError("");
       return;
     }
-    
+
     const coupon = applicableCouponsForCart.find(c => (c.code || c.id) === codeUpper);
     if (coupon) {
       setAppliedCoupon(coupon);
@@ -232,7 +232,7 @@ export default function CheckoutPage() {
     if (!formData.state.trim()) newErrors.state = "State is required";
     if (!formData.zipCode.trim()) newErrors.zipCode = "ZIP code is required";
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -315,6 +315,8 @@ export default function CheckoutPage() {
           price: item.product.price,
           quantity: item.quantity,
           image: item.product.image,
+          returnPolicyAvailable: item.product.returnPolicyAvailable || false,
+          returnPolicyDays: item.product.returnPolicyDays || 30,
         })),
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
         status: "Processing",
@@ -342,16 +344,16 @@ export default function CheckoutPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#5BA6D6] selection:text-[#0D3C6A] relative overflow-x-hidden pt-20">
       <Header cartItems={cartItems} onUpdateQuantity={handleUpdateQuantity} onRemoveItem={handleRemoveItem} />
-      
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
         onSuccess={handleAuthSuccess}
         initialEmail={formData.email}
       />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 select-none text-left">
-        
+
         {/* Step indicators */}
         <div className="flex items-center justify-center space-x-4 mb-12 text-xs tracking-widest uppercase font-semibold text-[#00A896]">
           <span className={`${step === 1 ? "text-[#0D3C6A]" : ""}`}>01. Shipping Info</span>
@@ -360,11 +362,11 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          
+
           {/* A. LEFT SIDEBAR: STEP FORMS */}
           <div className="lg:col-span-7 bg-white rounded-3xl p-8 border border-[#B0B7C3] shadow-sm space-y-8">
             {step === 1 ? (
-              
+
               /* STEP 1: SHIPPING & CONTACT DETAILS */
               <form onSubmit={handleNextStep} className="space-y-6">
                 <div>
@@ -511,14 +513,14 @@ export default function CheckoutPage() {
                 </button>
               </form>
             ) : (
-              
+
               /* STEP 2: PAYMENT METHOD INFO */
               <form onSubmit={handlePlaceOrder} className="space-y-6">
                 <div>
                   <h2 className="font-serif text-xl text-[#0D3C6A] font-light uppercase tracking-wider mb-4 border-b border-[#B0B7C3] pb-2">
                     Payment Details
                   </h2>
-                  
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
                     {[
                       { id: 'card', label: 'Cards' },
@@ -615,7 +617,7 @@ export default function CheckoutPage() {
                   {paymentMethod === 'cod' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <div className="p-4 bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl text-xs text-[#0D3C6A] leading-relaxed">
-                        <strong>Cash on Delivery selected.</strong> <br/>
+                        <strong>Cash on Delivery selected.</strong> <br />
                         You will pay the delivery agent in cash when your order arrives. Please ensure you have the exact amount available.
                       </div>
                     </div>
@@ -700,14 +702,14 @@ export default function CheckoutPage() {
               </div>
               {appliedCoupon && <span className="text-[10px] text-green-600 block">✨ {appliedCoupon.discount} code applied!</span>}
               {discountError && <span className="text-[10px] text-red-500 block">{discountError}</span>}
-              
+
               {applicableCouponsForCart.length > 0 && !appliedCoupon && (
                 <div className="mt-3 pt-3 border-t border-[#B0B7C3]/50">
                   <span className="text-[9px] uppercase tracking-wider text-[#00A896] block mb-2">Available Coupons</span>
                   <div className="flex flex-wrap gap-2">
                     {applicableCouponsForCart.map(c => (
-                      <button 
-                        key={c.code || c.id} 
+                      <button
+                        key={c.code || c.id}
                         onClick={() => applyDiscount(c.code || c.id)}
                         className="text-[9px] font-bold uppercase tracking-wider bg-[#FAF6F0] border border-[#5BA6D6] text-[#0D3C6A] px-3 py-1.5 rounded-lg hover:bg-[#0D3C6A] hover:text-white transition-colors"
                       >

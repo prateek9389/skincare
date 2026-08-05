@@ -51,7 +51,7 @@ export default function ProductDetailPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState<{label: string, price: number, image?: string} | null>(null);
-
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Top Carousel State
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -62,10 +62,18 @@ export default function ProductDetailPage() {
         const prodDoc = await getDoc(doc(db, "products", id as string));
         if (prodDoc.exists()) {
           const prodData = prodDoc.data() as FirestoreProduct;
-          setProduct({ ...prodData, id: prodDoc.id });
+          
+          const defaultQuantities = [
+            { label: "25ml", price: 50 },
+            { label: "50ml", price: 100 },
+            { label: "100ml", price: 150 }
+          ];
+          const finalQuantities = prodData.quantities && prodData.quantities.length > 0 ? prodData.quantities : defaultQuantities;
+          
+          setProduct({ ...prodData, id: prodDoc.id, quantities: finalQuantities });
           setSelectedImage(prodData.mainImage);
-          if (prodData.quantities && prodData.quantities.length > 0) {
-            setSelectedQuantity({ label: "1 Pack", price: prodData.price });
+          if (finalQuantities.length > 0) {
+            setSelectedQuantity(finalQuantities[0]);
           }
 
           // Fetch approved reviews
@@ -192,7 +200,9 @@ export default function ProductDetailPage() {
     image: product.mainImage,
     category: product.category as any,
     description: product.description,
-    ingredients: product.ingredients
+    ingredients: product.ingredients,
+    returnPolicyAvailable: product.returnPolicyAvailable,
+    returnPolicyDays: product.returnPolicyDays
   };
 
   const handleAddToCart = () => {
@@ -439,36 +449,86 @@ export default function ProductDetailPage() {
 
               {/* Price and Cart Action row */}
               <div className="flex flex-col gap-4 py-6 border-y border-[#B0B7C3]">
-                {product.quantities && product.quantities.length > 0 && (
-                  <div className="flex flex-col gap-2 mb-2">
-                    <span className="text-[9px] font-bold tracking-widest text-[#00A896] uppercase">Select Size / Quantity</span>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
-                      {[{ label: "1 Pack", price: product.price, image: product.mainImage }, ...product.quantities!].map((opt, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setSelectedQuantity(opt);
-                            if (opt.image) {
-                              setSelectedImage(opt.image);
-                            } else {
-                              setSelectedImage(product.mainImage);
-                            }
-                          }}
-                          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
-                            (selectedQuantity?.label || "1 Pack") === opt.label 
-                              ? "border-[#0D3C6A] bg-[#0D3C6A] text-white shadow-md" 
-                              : "border-[#B0B7C3] bg-[#FAF6F0] text-[#0D3C6A] hover:border-[#5BA6D6] hover:bg-white"
-                          }`}
-                        >
-                          <span className={`text-[10px] uppercase tracking-widest font-bold mb-1 ${
-                            (selectedQuantity?.label || "1 Pack") === opt.label ? "text-[#5BA6D6]" : "text-[#00A896]"
-                          }`}>{opt.label}</span>
-                          <span className="font-serif text-sm">₹{opt.price}</span>
-                        </button>
-                      ))}
+                {product.quantities && product.quantities.length > 0 && (() => {
+                  const sizeOptions = product.quantities.filter(q => !q.label.toLowerCase().includes("pack"));
+                  const packOptions = product.quantities.filter(q => q.label.toLowerCase().includes("pack"));
+                  
+                  return (
+                    <div className="flex flex-col gap-6 mb-2">
+                      {sizeOptions.length > 0 && (
+                        <div className="relative">
+                          <span className="text-[9px] font-bold tracking-widest text-[#00A896] uppercase mb-2 block">Select Size</span>
+                          <div className="relative" onMouseLeave={() => setOpenDropdownId(null)}>
+                            <button
+                              onClick={() => setOpenDropdownId(openDropdownId === 'qty' ? null : 'qty')}
+                              className={`flex items-center justify-between w-full text-sm uppercase px-5 py-4 rounded-xl border ${openDropdownId === 'qty' ? 'border-[#0D3C6A] shadow-sm bg-white' : 'border-[#B0B7C3]/60 bg-[#FAF6F0]'} text-[#0D3C6A] font-bold tracking-wider transition-all duration-300`}
+                            >
+                              <span>
+                                {sizeOptions.find(o => o.label === selectedQuantity?.label)
+                                  ? selectedQuantity?.label
+                                  : "Select Size"}
+                              </span>
+                              <svg className={`w-4 h-4 opacity-80 transition-transform duration-300 ${openDropdownId === 'qty' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+
+                            <div className={`absolute top-full left-0 w-full bg-white border border-[#B0B7C3]/30 rounded-xl shadow-xl z-50 overflow-hidden origin-top transition-all duration-200 ${openDropdownId === 'qty' ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'}`}>
+                              {sizeOptions.map((opt, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => {
+                                    setSelectedQuantity(opt);
+                                    if (opt.image) {
+                                      setSelectedImage(opt.image);
+                                    } else {
+                                      setSelectedImage(product.mainImage);
+                                    }
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className={`w-full text-left px-5 py-4 text-sm font-bold uppercase tracking-wider transition-colors ${
+                                    selectedQuantity?.label === opt.label 
+                                      ? 'bg-[#FAF6F0] text-[#0D3C6A]' 
+                                      : 'text-[#0D3C6A]/80 hover:bg-[#FAF6F0]/50 hover:text-[#0D3C6A]'
+                                  }`}
+                                >
+                                  {opt.label} - ₹{opt.price.toFixed(2)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {packOptions.length > 0 && (
+                        <div>
+                          <span className="text-[9px] font-bold tracking-widest text-[#00A896] uppercase mb-2 block">Available Packs</span>
+                          <div className="grid grid-cols-2 gap-3">
+                            {packOptions.map((pack, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  setSelectedQuantity(pack);
+                                  if (pack.image) {
+                                    setSelectedImage(pack.image);
+                                  } else {
+                                    setSelectedImage(product.mainImage);
+                                  }
+                                }}
+                                className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${
+                                  selectedQuantity?.label === pack.label
+                                    ? 'border-[#0D3C6A] bg-[#FAF6F0] shadow-sm'
+                                    : 'border-[#B0B7C3]/50 bg-white hover:border-[#5BA6D6]'
+                                }`}
+                              >
+                                <span className="font-serif text-sm text-[#0D3C6A] font-bold mb-1">{pack.label}</span>
+                                <span className="text-[10px] text-[#00A896] font-bold tracking-widest">₹{pack.price.toFixed(2)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
@@ -488,6 +548,14 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 </div>
+                
+                {/* Return Policy */}
+                {product.returnPolicyAvailable && (
+                  <div className="flex items-center gap-2 -mt-2 mb-2">
+                    <svg className="w-4 h-4 text-[#00A896]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    <span className="text-[9px] font-bold tracking-widest text-[#00A896] uppercase">{product.returnPolicyDays} Day Return Policy Available</span>
+                  </div>
+                )}
                 
                 <button
                   onClick={handleAddToCart}

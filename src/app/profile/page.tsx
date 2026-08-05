@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, query, where, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
@@ -23,7 +23,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("orders");
-  
+
   // Cart State
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const cartLoadedRef = React.useRef(false);
@@ -46,6 +46,15 @@ export default function ProfilePage() {
   });
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsubProducts = onSnapshot(collection(db, "products"), (snap) => {
+      const prods = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(prods);
+    });
+    return () => unsubProducts();
+  }, []);
 
   // Load Cart from localStorage
   useEffect(() => {
@@ -127,13 +136,13 @@ export default function ProfilePage() {
         const data = userDoc.data();
         let firstName = data.firstName || "";
         let lastName = data.lastName || "";
-        
+
         if (!firstName && !lastName && auth.currentUser?.displayName) {
           const nameParts = auth.currentUser.displayName.split(" ");
           firstName = nameParts[0] || "";
           lastName = nameParts.slice(1).join(" ") || "";
         }
-        
+
         setFormData({
           firstName,
           lastName,
@@ -167,9 +176,22 @@ export default function ProfilePage() {
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Failed to update profile.");
+      alert("There was an error saving your profile. Please try again.");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleReturnOrder = async (orderId: string) => {
+    if (confirm("Are you sure you want to return this order?")) {
+      try {
+        const orderRef = doc(db, "orders", orderId);
+        await setDoc(orderRef, { status: "Return Requested" }, { merge: true });
+        setOrders(orders.map(o => o.orderId === orderId ? { ...o, status: "Return Requested" } : o));
+      } catch (error) {
+        console.error("Error returning order:", error);
+        alert("There was an error processing your return. Please try again.");
+      }
     }
   };
 
@@ -213,10 +235,10 @@ export default function ProfilePage() {
             <div className="bg-[#FAF6F0] p-6 sm:w-1/3 border-b sm:border-b-0 sm:border-r border-[#B0B7C3] flex items-center justify-center relative">
               {order.items && order.items.length > 0 && (
                 <div className="relative w-32 h-32">
-                  <Image data-pin-nopin="true" 
-                    src={order.items[0].image || "/placeholder.png"} 
-                    alt={order.items[0].name || "Product"} 
-                    fill 
+                  <Image data-pin-nopin="true"
+                    src={order.items[0].image || "/placeholder.png"}
+                    alt={order.items[0].name || "Product"}
+                    fill
                     sizes="128px"
                     className="object-contain drop-shadow-md hover:scale-105 transition-transform duration-500"
                   />
@@ -228,7 +250,7 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-            
+
             {/* Details side */}
             <div className="p-6 sm:w-2/3 flex flex-col justify-between space-y-4">
               <div className="flex justify-between items-start">
@@ -252,7 +274,16 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#B0B7C3]/50 flex justify-end">
+              <div className="pt-4 border-t border-[#B0B7C3]/50 flex justify-end gap-3">
+                {order.status === "Delivered" && order.items && order.items.some((i: any) => {
+                  if (i.returnPolicyAvailable) return true;
+                  const liveProduct = products.find(p => p.id === i.productId || p.id === i.id);
+                  return liveProduct?.returnPolicyAvailable === true;
+                }) && (
+                    <button onClick={() => handleReturnOrder(order.orderId)} className="text-xs font-bold text-red-600 uppercase tracking-widest hover:bg-red-50 transition-colors flex items-center gap-1 border border-red-600 px-4 py-2 rounded-full">
+                      Return Order
+                    </button>
+                  )}
                 <Link href={`/orders/${order.orderId}`} className="text-xs font-bold text-[#0D3C6A] uppercase tracking-widest hover:text-[#5BA6D6] transition-colors flex items-center gap-1 border border-[#0D3C6A] px-4 py-2 rounded-full hover:bg-neutral-50">
                   View Order Details &rarr;
                 </Link>
@@ -275,93 +306,94 @@ export default function ProfilePage() {
     return (
       <form onSubmit={handleSaveProfile} className="bg-white border border-[#B0B7C3] rounded-3xl p-8 shadow-sm space-y-6">
         <h2 className="font-serif text-xl text-[#0D3C6A]">Personal Information</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">First Name</label>
-            <input 
+            <input
               required
-              type="text" 
+              type="text"
               value={formData.firstName}
-              onChange={e => setFormData({...formData, firstName: e.target.value})}
-              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]" 
+              onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
             />
           </div>
           <div className="flex flex-col space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">Last Name</label>
-            <input 
+            <input
               required
-              type="text" 
+              type="text"
               value={formData.lastName}
-              onChange={e => setFormData({...formData, lastName: e.target.value})}
-              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]" 
+              onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
             />
           </div>
           <div className="flex flex-col space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">Email Address</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={user?.email || ""}
               disabled
-              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#00A896] opacity-70 cursor-not-allowed" 
+              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#00A896] opacity-70 cursor-not-allowed"
             />
           </div>
           <div className="flex flex-col space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">Phone Number</label>
-            <input 
-              type="tel" 
+            <input
+              required
+              type="tel"
               value={formData.phone}
-              onChange={e => setFormData({...formData, phone: e.target.value})}
-              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]" 
+              onChange={e => setFormData({ ...formData, phone: e.target.value })}
+              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
             />
           </div>
         </div>
 
         <h2 className="font-serif text-xl text-[#0D3C6A] pt-4 border-t border-[#B0B7C3]/50">Shipping Address</h2>
-        
+
         <div className="flex flex-col space-y-2">
           <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">Street Address</label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={formData.address}
-            onChange={e => setFormData({...formData, address: e.target.value})}
-            className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]" 
+            onChange={e => setFormData({ ...formData, address: e.target.value })}
+            className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">City</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.city}
-              onChange={e => setFormData({...formData, city: e.target.value})}
-              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]" 
+              onChange={e => setFormData({ ...formData, city: e.target.value })}
+              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
             />
           </div>
           <div className="flex flex-col space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">State/Province</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.state}
-              onChange={e => setFormData({...formData, state: e.target.value})}
-              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]" 
+              onChange={e => setFormData({ ...formData, state: e.target.value })}
+              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
             />
           </div>
           <div className="flex flex-col space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">Zip Code</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.zipCode}
-              onChange={e => setFormData({...formData, zipCode: e.target.value})}
-              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]" 
+              onChange={e => setFormData({ ...formData, zipCode: e.target.value })}
+              className="bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
             />
           </div>
         </div>
 
         <div className="pt-6 flex justify-end">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={savingProfile}
             className="bg-[#0D3C6A] hover:bg-[#383838] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-md disabled:opacity-50"
           >
@@ -384,7 +416,7 @@ export default function ProfilePage() {
         </div>
       );
     }
-    
+
     const total = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
     return (
@@ -399,10 +431,10 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-[#0D3C6A] uppercase tracking-wider">{item.product.name}</h3>
-                  <p className="text-[10px] text-[#00A896]">₹{item.product.price}</p>
+                  <p className="text-[10px] text-[#00A896]">₹{item.product.price.toFixed(2)}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="flex items-center border border-[#B0B7C3] rounded-full px-2 py-1">
                   <button onClick={() => handleUpdateQuantity(item.product.id, -1)} className="px-2 text-[#0D3C6A] hover:text-[#00A896]">-</button>
@@ -416,7 +448,7 @@ export default function ProfilePage() {
             </div>
           ))}
         </div>
-        
+
         <div className="pt-4 flex justify-between items-center">
           <p className="font-serif text-lg text-[#0D3C6A]">Total: <span className="font-bold">₹{total}</span></p>
           <Link href="/checkout" className="bg-[#0D3C6A] hover:bg-[#383838] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-md">
@@ -431,17 +463,17 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-screen bg-[#F5F2EB] selection:bg-[#5BA6D6] selection:text-[#0D3C6A] pt-20">
       <Header cartItems={cartItems} onUpdateQuantity={handleUpdateQuantity} onRemoveItem={handleRemoveItem} />
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
         onClose={() => {
           setIsAuthModalOpen(false);
           router.push("/shop");
-        }} 
+        }}
         onSuccess={handleAuthSuccess}
       />
 
       <main className="flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 select-none text-left flex flex-col md:flex-row gap-8">
-        
+
         {/* Sidebar */}
         <div className="w-full md:w-64 shrink-0 space-y-2">
           <div className="mb-8">
@@ -452,40 +484,37 @@ export default function ProfilePage() {
               {user?.email || "Manage your account"}
             </p>
           </div>
-          
+
           <button
             onClick={() => setActiveTab("orders")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-xs font-bold uppercase tracking-widest ${
-              activeTab === "orders" 
-                ? "bg-white text-[#0D3C6A] shadow-sm border border-[#B0B7C3]" 
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-xs font-bold uppercase tracking-widest ${activeTab === "orders"
+                ? "bg-white text-[#0D3C6A] shadow-sm border border-[#B0B7C3]"
                 : "text-[#00A896] hover:bg-white/50 hover:text-[#0D3C6A]"
-            }`}
+              }`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
             Orders
           </button>
-          
+
           <button
             onClick={() => setActiveTab("settings")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-xs font-bold uppercase tracking-widest ${
-              activeTab === "settings" 
-                ? "bg-white text-[#0D3C6A] shadow-sm border border-[#B0B7C3]" 
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-xs font-bold uppercase tracking-widest ${activeTab === "settings"
+                ? "bg-white text-[#0D3C6A] shadow-sm border border-[#B0B7C3]"
                 : "text-[#00A896] hover:bg-white/50 hover:text-[#0D3C6A]"
-            }`}
+              }`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
             Account Settings
           </button>
-          
+
           <button
             onClick={() => setActiveTab("cart")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-xs font-bold uppercase tracking-widest ${
-              activeTab === "cart" 
-                ? "bg-white text-[#0D3C6A] shadow-sm border border-[#B0B7C3]" 
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-xs font-bold uppercase tracking-widest ${activeTab === "cart"
+                ? "bg-white text-[#0D3C6A] shadow-sm border border-[#B0B7C3]"
                 : "text-[#00A896] hover:bg-white/50 hover:text-[#0D3C6A]"
-            }`}
+              }`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
             My Cart
           </button>
         </div>
@@ -493,9 +522,9 @@ export default function ProfilePage() {
         {/* Content Area */}
         <div className="flex-1 min-w-0">
           {!user ? (
-             <div className="text-center py-20 text-[#0D3C6A]">
-               <p>Please log in to view your profile.</p>
-             </div>
+            <div className="text-center py-20 text-[#0D3C6A]">
+              <p>Please log in to view your profile.</p>
+            </div>
           ) : (
             <>
               {activeTab === "orders" && renderOrders()}

@@ -1,15 +1,47 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { PRODUCTS, Product } from "@/data/products";
 import Link from "next/link";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { FirestoreProduct } from "@/app/admin/ProductManager";
 
 interface FullscreenExpansionProps {
   onAddToCart?: (product: Product) => void;
 }
 
 export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansionProps) {
+  const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "products"), (snapshot) => {
+      const prods = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as FirestoreProduct;
+        const defaultQuantities = [
+          { label: "25ml", price: 50 },
+          { label: "50ml", price: 100 },
+          { label: "100ml", price: 150 }
+        ];
+        return {
+          id: docSnap.id,
+          name: data.name || "Unnamed Product",
+          category: data.category || "General",
+          price: Number(data.price) || 0,
+          description: data.description || "",
+          image: data.mainImage || "/placeholder.png",
+          tag: data.isFeatured ? "HIT" : undefined,
+          quantities: data.quantities && data.quantities.length > 0 ? data.quantities : defaultQuantities,
+        };
+      });
+      setDynamicProducts(prods);
+    }, (err) => console.error("Failed to load cabinet products", err));
+    return () => unsub();
+  }, []);
+
+  const displayProducts = dynamicProducts.length > 0 ? dynamicProducts : PRODUCTS;
+
   return (
     <section className="w-full py-20 md:py-28 bg-black text-white relative select-none overflow-hidden">
       {/* Subtle grid pattern background on the black section */}
@@ -39,7 +71,7 @@ export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansion
           <div className="flex w-max gap-6 px-6 animate-marquee hover:[animation-play-state:paused]">
             
             {/* First Set of Cards */}
-            {PRODUCTS.map((product) => (
+            {displayProducts.map((product) => (
               <div
                 key={`${product.id}-cabinet-1`}
                 className="w-[180px] sm:w-[220px] bg-neutral-900 rounded-2xl border border-neutral-800 p-4 flex flex-col space-y-4 shrink-0 hover:border-neutral-700 transition-colors duration-300 shadow-xl"
@@ -67,7 +99,7 @@ export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansion
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">₹{product.price}</span>
+                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider hidden sm:block">Premium</span>
                     {onAddToCart && (
@@ -87,7 +119,7 @@ export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansion
             ))}
 
             {/* Duplicated Second Set of Cards for Infinite Seamless Loop */}
-            {PRODUCTS.map((product) => (
+            {displayProducts.map((product) => (
               <div
                 key={`${product.id}-cabinet-2`}
                 className="w-[180px] sm:w-[220px] bg-neutral-900 rounded-2xl border border-neutral-800 p-4 flex flex-col space-y-4 shrink-0 hover:border-neutral-700 transition-colors duration-300 shadow-xl"
@@ -115,7 +147,7 @@ export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansion
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">₹{product.price}</span>
+                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider hidden sm:block">Premium</span>
                     {onAddToCart && (

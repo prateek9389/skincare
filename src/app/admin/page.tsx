@@ -71,6 +71,7 @@ interface OrderItem {
   price: number;
   quantity: number;
   image: string;
+  returnStatus?: "Return Requested" | "Return Approved" | "Return Rejected";
 }
 
 interface OrderDetails {
@@ -81,6 +82,7 @@ interface OrderDetails {
   shippingAddress: string;
   status: string;
   customerName?: string;
+  phone?: string;
   createdAt?: any;
 }
 
@@ -142,7 +144,47 @@ export default function AdminPanel() {
   const [orders, setOrders] = useState<OrderDetails[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [productList, setProductList] = useState<Product[]>(PRODUCTS);
-  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{orderId: string, status: string} | null>(null);
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{ orderId: string, status: string } | null>(null);
+
+  // Monthly Target Modal State
+  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
+  const [targetInputValue, setTargetInputValue] = useState("");
+  const [savingTarget, setSavingTarget] = useState(false);
+
+  const handleSaveMonthlyTarget = async () => {
+    const val = parseInt(targetInputValue, 10);
+    if (isNaN(val) || val <= 0) {
+      alert("Please enter a valid positive number.");
+      return;
+    }
+    setSavingTarget(true);
+    try {
+      await setDoc(doc(db, "admin", "dashboardStats"), { monthlyTarget: val }, { merge: true });
+      setAdminStats(prev => ({ ...prev, monthlyTarget: val }));
+      setIsTargetModalOpen(false);
+    } catch (err) {
+      console.error("Failed to update monthly target:", err);
+      alert("Failed to update target.");
+    } finally {
+      setSavingTarget(false);
+    }
+  };
+
+  const handleUpdateItemReturnStatus = async (orderId: string, itemIdx: number, newStatus: string) => {
+    try {
+      const o = orders.find(x => x.orderId === orderId);
+      if (!o) return;
+      const newItems = [...o.items];
+      newItems[itemIdx] = { ...newItems[itemIdx], returnStatus: newStatus as any };
+      await setDoc(doc(db, "orders", orderId), { items: newItems }, { merge: true });
+      if (selectedOrder?.orderId === orderId) {
+        setSelectedOrder({ ...selectedOrder, items: newItems });
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update item return status.");
+    }
+  };
 
   const [currentDate, setCurrentDate] = useState(new Date());
   useEffect(() => {
@@ -158,6 +200,7 @@ export default function AdminPanel() {
   else if (currentHour < 21) greeting = "Good evening";
   else greeting = "Good night";
   const [adminStats, setAdminStats] = useState({ activeCustomers: 0, monthlyTarget: 0, revenueOffset: 0, ordersOffset: 0, conversionRate: 0, bounceRate: 0, returnRate: 0, delivered7dOffset: 0, avgDeliveryDays: 0, onTimeRate: 0 });
+  const [totalUsersCountReal, setTotalUsersCountReal] = useState(0);
   const [shippingZones, setShippingZones] = useState<any[]>([]);
 
   // Auth state
@@ -247,7 +290,7 @@ export default function AdminPanel() {
   const [newCouponProduct, setNewCouponProduct] = useState("all");
   const [chartFilter, setChartFilter] = useState<"7d" | "30d" | "90d" | "12m" | "All">("12m");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [orderFilter, setOrderFilter] = useState<"All" | "Processing" | "Shipped" | "Delivered">("All");
+  const [orderFilter, setOrderFilter] = useState<"All" | "Processing" | "Shipped" | "Delivered" | "Returned" | "Return Requested" | "Return Approved">("All");
   const [reviewFilter, setReviewFilter] = useState<"All" | "Pending" | "Approved" | "Rejected">("Pending");
   const [productView, setProductView] = useState<"grid" | "list">("grid");
   const updatingOrdersRef = useRef<Set<string>>(new Set());
@@ -256,7 +299,7 @@ export default function AdminPanel() {
   // Load data from Firestore
   useEffect(() => {
     if (!user) return; // Only fetch if logged in
-    
+
     // Set up real-time listener for orders
     const unsubscribeOrders = onSnapshot(collection(db, "orders"), (querySnapshot) => {
       const ordersList = querySnapshot.docs.map(docSnap => ({ ...docSnap.data(), id: docSnap.id } as unknown as OrderDetails));
@@ -287,6 +330,10 @@ export default function AdminPanel() {
             onTimeRate: statsDoc.data().onTimeRate !== undefined ? statsDoc.data().onTimeRate : 0
           });
         }
+
+        const usersSnap = await getDocs(collection(db, "users"));
+        setTotalUsersCountReal(usersSnap.docs.length);
+
 
         const couponsSnap = await getDocs(collection(db, "coupons"));
         const couponsList = couponsSnap.docs.map(docSnap => ({ ...docSnap.data(), id: docSnap.id } as any));
@@ -337,14 +384,14 @@ export default function AdminPanel() {
     try {
       const orderRef = doc(db, "orders", orderId);
       const orderSnap = await getDoc(orderRef);
-      
+
       // If the order is already in this status in the database, do not process again
       if (orderSnap.exists() && orderSnap.data().status === newStatus) {
         return;
       }
 
       await setDoc(orderRef, { status: newStatus }, { merge: true });
-      
+
       if (newStatus === "Delivered") {
         const order = orders.find((o) => o.orderId === orderId);
         if (order && order.items) {
@@ -374,14 +421,14 @@ export default function AdminPanel() {
   const handleAddCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCouponCode.trim()) return;
-    
+
     const codeId = newCouponCode.toUpperCase();
     const newCoupon = { code: codeId, discount: newCouponDiscount, productId: newCouponProduct, status: "Active", usages: 0 };
-    
+
     setCoupons((prev) => [...prev, { ...newCoupon, id: codeId }]);
     setNewCouponCode("");
     setNewCouponProduct("all");
-    
+
     try {
       await setDoc(doc(db, "coupons", codeId), newCoupon);
     } catch (err) {
@@ -392,10 +439,10 @@ export default function AdminPanel() {
   const handleToggleCoupon = async (code: string) => {
     const couponToUpdate = coupons.find(c => (c.code || c.id) === code);
     if (!couponToUpdate) return;
-    
+
     const newStatus = couponToUpdate.status === "Active" ? "Expired" : "Active";
     setCoupons((prev) => prev.map((c) => ((c.code || c.id) === code ? { ...c, status: newStatus } : c)));
-    
+
     try {
       await setDoc(doc(db, "coupons", code), { status: newStatus }, { merge: true });
     } catch (err) {
@@ -465,12 +512,12 @@ export default function AdminPanel() {
         const parts = addressStr.split(',');
         let region = "Unknown";
         if (parts.length >= 2) {
-          const stateZip = parts[parts.length - 1].trim(); 
-          region = stateZip.split(' ')[0] || stateZip; 
+          const stateZip = parts[parts.length - 1].trim();
+          region = stateZip.split(' ')[0] || stateZip;
         } else {
-          region = addressStr; 
+          region = addressStr;
         }
-        
+
         regionSales.set(region, (regionSales.get(region) || 0) + order.total);
       }
     });
@@ -487,10 +534,10 @@ export default function AdminPanel() {
   // Derived Customers Data
   const customersList = useMemo(() => {
     const customerMap = new Map<string, any>();
-    
+
     orders.forEach((order) => {
       const key = (order as any).userId || (order as any).customerName || "unknown";
-      
+
       if (!customerMap.has(key)) {
         customerMap.set(key, {
           id: key,
@@ -503,7 +550,7 @@ export default function AdminPanel() {
           fav: (order as any).items?.[0]?.image || "",
         });
       }
-      
+
       const cust = customerMap.get(key);
       cust.ordersCount += 1;
       cust.ltv += (order as any).total;
@@ -518,7 +565,7 @@ export default function AdminPanel() {
       let tone = "blue";
       if (c.ltv > 500) { tier = "Gold Member"; tone = "amber"; }
       else if (c.ltv > 200) { tier = "Silver Member"; tone = "neutral"; }
-      
+
       const now = new Date();
       const isNew = c.firstOrderDate.getMonth() === now.getMonth() && c.firstOrderDate.getFullYear() === now.getFullYear();
       if (isNew && c.ltv <= 200) {
@@ -533,9 +580,9 @@ export default function AdminPanel() {
   const totalCustomersCalculated = customersList.length;
   const newThisMonthCalculated = customersList.filter(c => c.isNew).length;
   const goldMembersCalculated = customersList.filter(c => c.tier === "Gold Member").length;
-  const avgLtvCalculated = customersList.length > 0 ? (customersList.reduce((acc, c) => acc + c.ltv, 0) / customersList.length) : "0.00";
+  const avgLtvCalculated = customersList.length > 0 ? (customersList.reduce((acc, c) => acc + c.ltv, 0) / customersList.length).toFixed(2) : "0.00";
 
-  const monthlyTargetAmount = 100000;
+  const monthlyTargetAmount = adminStats.monthlyTarget || 100000;
   const calculatedMonthlyTargetPct = useMemo(() => {
     const now = new Date();
     const currentMonthRevenue = orders
@@ -545,7 +592,7 @@ export default function AdminPanel() {
       })
       .reduce((sum, o) => sum + o.total, 0);
     return Math.min(100, Math.round((currentMonthRevenue / monthlyTargetAmount) * 100));
-  }, [orders]);
+  }, [orders, monthlyTargetAmount]);
 
   const chartDataSets = useMemo(() => {
     const now = new Date();
@@ -555,21 +602,21 @@ export default function AdminPanel() {
       return map;
     };
 
-    const d7 = getMap(Array.from({length: 7}, (_, i) => {
+    const d7 = getMap(Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (6 - i));
       return d.toLocaleDateString("en-US", { weekday: 'short' });
     }));
 
     const d30 = getMap(["W1", "W2", "W3", "W4"]);
-    
-    const d90 = getMap(Array.from({length: 3}, (_, i) => {
+
+    const d90 = getMap(Array.from({ length: 3 }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() - (2 - i));
       return d.toLocaleDateString("en-US", { month: 'short' });
     }));
 
-    const m12 = getMap(Array.from({length: 12}, (_, i) => {
+    const m12 = getMap(Array.from({ length: 12 }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() - (11 - i));
       return d.toLocaleDateString("en-US", { month: 'short' });
@@ -581,27 +628,27 @@ export default function AdminPanel() {
       const date = o.createdAt ? new Date(o.createdAt.toMillis()) : new Date();
       const diffTime = now.getTime() - date.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays <= 7) {
         const key = date.toLocaleDateString("en-US", { weekday: 'short' });
         if (d7.has(key)) d7.set(key, d7.get(key)! + o.total);
       }
-      
+
       if (diffDays <= 30) {
         const wKey = `W${Math.min(4, Math.max(1, Math.ceil((31 - diffDays) / 7.5)))}`;
         if (d30.has(wKey)) d30.set(wKey, d30.get(wKey)! + o.total);
       }
-      
+
       if (diffDays <= 90) {
         const key = date.toLocaleDateString("en-US", { month: 'short' });
         if (d90.has(key)) d90.set(key, d90.get(key)! + o.total);
       }
-      
+
       if (diffDays <= 365) {
         const key = date.toLocaleDateString("en-US", { month: 'short' });
         if (m12.has(key)) m12.set(key, m12.get(key)! + o.total);
       }
-      
+
       const q = Math.floor(date.getMonth() / 3) + 1;
       const yr = date.getFullYear().toString().slice(-2);
       const qKey = `Q${q}'${yr}`;
@@ -609,14 +656,14 @@ export default function AdminPanel() {
     });
 
     const formatMap = (map: Map<string, number>) => Array.from(map.entries()).map(([label, value]) => ({ label, value }));
-    const formatAllMap = Array.from(allMap.entries()).map(([label, value]) => ({ label, value })).sort((a,b) => a.label.localeCompare(b.label));
+    const formatAllMap = Array.from(allMap.entries()).map(([label, value]) => ({ label, value })).sort((a, b) => a.label.localeCompare(b.label));
 
     return {
       "7d": formatMap(d7),
       "30d": formatMap(d30),
       "90d": formatMap(d90),
       "12m": formatMap(m12),
-      "All": formatAllMap.length > 0 ? formatAllMap : [{label: "No Data", value: 0}]
+      "All": formatAllMap.length > 0 ? formatAllMap : [{ label: "No Data", value: 0 }]
     };
   }, [orders]);
 
@@ -627,7 +674,7 @@ export default function AdminPanel() {
     const catMap = new Map<string, number>();
     let totalCatRev = 0;
     const soldQtyMap = new Map<string, number>();
-    
+
     orders.forEach(o => {
       o.items?.forEach(item => {
         const pid = item.productId || item.id;
@@ -645,17 +692,17 @@ export default function AdminPanel() {
 
     const colors = ["bg-[#BCAE9E]", "bg-neutral-600", "bg-neutral-700", "bg-neutral-800"];
     const categoryShareData = Array.from(catMap.entries())
-      .map(([category, rev]) => ({ category, rev, share: totalCatRev > 0 ? Math.round((rev/totalCatRev)*100) : 0 }))
-      .sort((a,b) => b.rev - a.rev)
+      .map(([category, rev]) => ({ category, rev, share: totalCatRev > 0 ? Math.round((rev / totalCatRev) * 100) : 0 }))
+      .sort((a, b) => b.rev - a.rev)
       .slice(0, 4)
       .map((item, idx) => ({ ...item, color: colors[idx % colors.length] }));
-      
+
     const lowStockProducts = PRODUCTS.map(p => {
       const sold = soldQtyMap.get(p.id) || 0;
       const stock = Math.max(0, 100 - sold);
       return { ...p, stock, pct: Math.round((stock / 100) * 100) };
-    }).sort((a,b) => a.stock - b.stock).slice(0, 3);
-    
+    }).sort((a, b) => a.stock - b.stock).slice(0, 3);
+
     const sortedOrders = [...orders].sort((a, b) => {
       const dA = a.createdAt ? a.createdAt.toMillis() : 0;
       const dB = b.createdAt ? b.createdAt.toMillis() : 0;
@@ -767,8 +814,8 @@ export default function AdminPanel() {
                   key={item.id}
                   onClick={() => setActiveSection(item.id as SectionType)}
                   className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all ${isSelected
-                      ? "bg-[#FAF6F0] text-[#0D3C6A] border-l-2 border-[#BCAE9E] shadow-sm"
-                      : "text-[#00A896] hover:text-[#0D3C6A] hover:bg-[#FAF6F0]/50"
+                    ? "bg-[#FAF6F0] text-[#0D3C6A] border-l-2 border-[#BCAE9E] shadow-sm"
+                    : "text-[#00A896] hover:text-[#0D3C6A] hover:bg-[#FAF6F0]/50"
                     }`}
                 >
                   <Icon className={`w-4 h-4 ${isSelected ? "text-[#BCAE9E]" : "text-[#00A896]"}`} />
@@ -814,12 +861,12 @@ export default function AdminPanel() {
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#00A896]" />
-              <input 
-                type="text" 
-                placeholder="Search resources..." 
+              <input
+                type="text"
+                placeholder="Search resources..."
                 value={globalSearchQuery}
                 onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                className="w-64 bg-[#FAF6F0] border border-[#B0B7C3] rounded-full pl-9 pr-4 py-2 text-xs text-[#0D3C6A] placeholder-[#00A896] focus:outline-none focus:border-[#BCAE9E]" 
+                className="w-64 bg-[#FAF6F0] border border-[#B0B7C3] rounded-full pl-9 pr-4 py-2 text-xs text-[#0D3C6A] placeholder-[#00A896] focus:outline-none focus:border-[#BCAE9E]"
               />
             </div>
             <button className="relative w-9 h-9 rounded-full bg-[#FAF6F0] border border-[#B0B7C3] flex items-center justify-center text-[#00A896] hover:text-[#0D3C6A] transition-colors">
@@ -869,14 +916,18 @@ export default function AdminPanel() {
                   {/* Stats Cards Row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
-                      { label: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: DollarSign, change: "All time total" },
-                      { label: "Sales Orders", value: `${totalOrdersCount}`, icon: ShoppingBag, change: "All time total" },
-                      { label: "Active Customers", value: `${totalCustomersCalculated}`, icon: Users, change: `${newThisMonthCalculated} new this month` },
-                      { label: "Monthly Target", value: `${calculatedMonthlyTargetPct}%`, icon: TrendingUp, change: `Goal: ₹${(monthlyTargetAmount/1000).toFixed(0)}k` },
+                      { label: "Total Revenue", value: `₹${totalRevenue.toFixed(2)}`, icon: DollarSign, change: "All time total" },
+                      { label: "Sales Orders", value: `${totalOrdersCount}`, icon: ShoppingBag, change: "All time total", onClick: () => setActiveSection("Orders") },
+                      { label: "Active Customers", value: `${totalCustomersCalculated}`, icon: Users, change: `${newThisMonthCalculated} new this month`, onClick: () => setActiveSection("Customers") },
+                      { label: "Monthly Target", value: `${calculatedMonthlyTargetPct}%`, icon: TrendingUp, change: `Goal: ₹${(monthlyTargetAmount / 1000).toFixed(0)}k`, onClick: () => { setTargetInputValue(monthlyTargetAmount.toString()); setIsTargetModalOpen(true); } },
                     ].map((stat, idx) => {
                       const StatIcon = stat.icon;
                       return (
-                        <div key={idx} className="bg-white border border-[#B0B7C3] rounded-2xl p-6 text-left relative overflow-hidden group hover:border-[#5BA6D6] transition-colors shadow-sm">
+                        <div
+                          key={idx}
+                          onClick={stat.onClick}
+                          className={`bg-white border border-[#B0B7C3] rounded-2xl p-6 text-left relative overflow-hidden group hover:border-[#5BA6D6] transition-colors shadow-sm ${stat.onClick ? 'cursor-pointer' : ''}`}
+                        >
                           <div className="flex justify-between items-center mb-4">
                             <span className="text-[10px] uppercase tracking-widest text-[#00A896] font-semibold">{stat.label}</span>
                             <div className="w-8 h-8 rounded-xl bg-[#FAF6F0] flex items-center justify-center text-[#BCAE9E]"><StatIcon className="w-4 h-4" /></div>
@@ -987,14 +1038,14 @@ export default function AdminPanel() {
                         <table className="w-full text-left border-collapse">
                           <thead><tr className="border-b border-[#B0B7C3] text-[10px] uppercase tracking-wider text-[#00A896] font-semibold"><th className="pb-3">Product</th><th className="pb-3">Category</th><th className="pb-3">Stock</th><th className="pb-3">Price</th></tr></thead>
                           <tbody className="text-xs font-light text-[#0D3C6A]/80 divide-y divide-[#B0B7C3]/60">
-                            {topProductsList.slice(0, 4).map((tp) => {
+                            {topProductsList.slice(0, 4).map((tp, idx) => {
                               const p = productList.find(px => px.id === tp.id) || productList[0];
                               return (
-                                <tr key={p.id} className="hover:bg-[#FAF6F0]/40 transition-colors">
+                                <tr key={tp.id || idx} className="hover:bg-[#FAF6F0]/40 transition-colors">
                                   <td className="py-3 flex items-center gap-3"><div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] overflow-hidden shrink-0 border border-[#5BA6D6] p-0.5"><Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="32px" className="object-contain" /></div><span className="font-medium text-[#0D3C6A] line-clamp-1">{p.name}</span></td>
                                   <td className="py-3 uppercase text-[10px] tracking-wider text-[#00A896] font-medium">{p.category}</td>
                                   <td className="py-3"><Pill tone="green">In Stock</Pill></td>
-                                  <td className="py-3 font-semibold text-[#0D3C6A]">₹{p.price}</td>
+                                  <td className="py-3 font-semibold text-[#0D3C6A]">₹{p.price.toFixed(2)}</td>
                                 </tr>
                               );
                             })}
@@ -1008,12 +1059,53 @@ export default function AdminPanel() {
                         {recentOrders.length > 0 ? recentOrders.map((o) => (
                           <div key={o.orderId} onClick={() => setSelectedOrder(o)} className="flex justify-between items-center text-xs border-b border-[#B0B7C3]/50 pb-3 last:border-0 last:pb-0 cursor-pointer hover:bg-[#FAF6F0] p-2 -mx-2 rounded-xl transition-colors">
                             <div className="space-y-0.5"><span className="font-bold text-[#0D3C6A] uppercase">{o.orderId}</span><span className="text-[10px] text-[#00A896] block uppercase tracking-wider">{o.date}</span></div>
-                            <div className="text-right space-y-1"><span className="font-semibold text-[#0D3C6A] block">₹{o.total}</span><span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span></div>
+                            <div className="text-right space-y-1"><span className="font-semibold text-[#0D3C6A] block">₹{o.total.toFixed(2)}</span><span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span></div>
                           </div>
                         )) : <div className="text-xs text-[#00A896] text-center mt-4">No recent orders found</div>}
                       </div>
                     </div>
                   </div>
+
+                  {/* Monthly Target Config Modal */}
+                  {isTargetModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                      <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative">
+                        <button onClick={() => setIsTargetModalOpen(false)} className="absolute top-4 right-4 text-[#00A896] hover:text-[#0D3C6A] transition-colors">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                        <h2 className="font-serif text-xl text-[#0D3C6A] uppercase tracking-wider mb-2">Set Monthly Target</h2>
+                        <p className="text-[10px] text-[#00A896] uppercase tracking-widest mb-6 block">Set a revenue goal for the current month in INR.</p>
+
+                        <div className="flex flex-col space-y-2 mb-8">
+                          <label className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold">Target Amount (₹)</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={targetInputValue}
+                            onChange={(e) => setTargetInputValue(e.target.value)}
+                            className="w-full bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none focus:border-[#BCAE9E]"
+                            placeholder="e.g. 150000"
+                          />
+                        </div>
+
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() => setIsTargetModalOpen(false)}
+                            className="flex-1 border border-[#0D3C6A] text-[#0D3C6A] py-3 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSaveMonthlyTarget}
+                            disabled={savingTarget}
+                            className="flex-1 bg-[#0D3C6A] hover:bg-[#383838] text-white py-3 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                          >
+                            {savingTarget ? "Saving..." : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -1037,20 +1129,23 @@ export default function AdminPanel() {
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <SectionHeader title="Order Management" subtitle="Track, manage and fulfill customer orders" />
-                    <div className="flex items-center gap-2 bg-[#FAF6F0] rounded-full p-1 border border-[#B0B7C3]">
-                      {(["All", "Processing", "Shipped", "Delivered"] as const).map((f) => {
+                    <div className="flex items-center gap-2 bg-[#FAF6F0] rounded-full p-1 border border-[#B0B7C3] flex-wrap">
+                      {(["All", "Processing", "Shipped", "Delivered", "Return Requested", "Return Approved", "Returned"] as const).map((f) => {
                         const count = f === "All" ? orders.length : orders.filter((o) => o.status === f).length;
                         return (<button key={f} onClick={() => setOrderFilter(f)} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${orderFilter === f ? "bg-[#0D3C6A] text-white shadow-sm" : "text-[#00A896] hover:text-[#0D3C6A]"}`}>{f}<span className={`text-[8px] px-1.5 py-0.5 rounded-full ${orderFilter === f ? "bg-white/20" : "bg-[#B0B7C3]"}`}>{count}</span></button>);
                       })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {[
                       { label: "Total Orders", value: orders.length.toString(), color: "text-[#0D3C6A]", bg: "bg-white" },
                       { label: "Processing", value: orders.filter((o) => o.status === "Processing").length.toString(), color: "text-amber-600", bg: "bg-amber-50" },
                       { label: "Shipped", value: orders.filter((o) => o.status === "Shipped").length.toString(), color: "text-blue-600", bg: "bg-blue-50" },
                       { label: "Delivered", value: orders.filter((o) => o.status === "Delivered").length.toString(), color: "text-green-600", bg: "bg-green-50" },
+                      { label: "Return Req", value: orders.filter((o) => o.status === "Return Requested").length.toString(), color: "text-orange-600", bg: "bg-orange-50" },
+                      { label: "Return Appr", value: orders.filter((o) => o.status === "Return Approved").length.toString(), color: "text-purple-600", bg: "bg-purple-50" },
+                      { label: "Returned", value: orders.filter((o) => o.status === "Returned").length.toString(), color: "text-red-600", bg: "bg-red-50" },
                     ].map((stat) => (<div key={stat.label} className={`${stat.bg} border border-[#B0B7C3] rounded-2xl p-4 text-left`}><span className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold block">{stat.label}</span><span className={`text-2xl font-bold ${stat.color} block mt-1`}>{stat.value}</span></div>))}
                   </div>
 
@@ -1063,39 +1158,63 @@ export default function AdminPanel() {
                         return o.orderId.toLowerCase().includes(q) || (o.customerName && o.customerName.toLowerCase().includes(q));
                       })
                       .map((o, idx) => (
-                      <motion.div key={o.orderId} onClick={() => setSelectedOrder(o)} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: idx * 0.05 }} className="bg-white border border-[#B0B7C3] rounded-2xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 border-b border-[#B0B7C3]/60">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${o.status === "Delivered" ? "bg-green-50 text-green-600" : o.status === "Shipped" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"}`}>{o.status === "Delivered" ? <Package className="w-5 h-5" /> : o.status === "Shipped" ? <Truck className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}</div>
-                            <div className="text-left"><h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">{o.orderId}</h4><span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} • ` : ""}{o.date}</span></div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`inline-block text-[9px] font-bold uppercase px-3 py-1.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span>
-                            <span className="text-lg font-bold text-[#0D3C6A]">₹{o.total}</span>
-                          </div>
-                        </div>
-                        <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
-                          <div className="md:col-span-2">
-                            <h5 className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold mb-3">Order Items</h5>
-                            <div className="flex flex-wrap gap-3">
-                              {o.items.map((item, iIdx) => {
-                                const matchedProduct = PRODUCTS.find((pp) => pp.id === (item.productId || item.id));
-                                const imgSrc = matchedProduct ? matchedProduct.image : item.image;
-                                return (<div key={iIdx} className="flex items-center gap-2 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl p-2 pr-4"><div className="relative w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 border border-[#B0B7C3] p-0.5">{imgSrc && <Image data-pin-nopin="true" src={imgSrc} alt={item.name} fill sizes="40px" className="object-contain" />}</div><div className="text-left"><span className="text-xs font-semibold text-[#0D3C6A] block leading-tight">{item.name}</span><span className="text-[9px] text-[#00A896]">Qty: {item.quantity} • ₹{item.price}</span></div></div>);
-                              })}
+                        <motion.div key={o.orderId} onClick={() => setSelectedOrder(o)} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: idx * 0.05 }} className="bg-white border border-[#B0B7C3] rounded-2xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 border-b border-[#B0B7C3]/60">
+                            <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${o.status === "Delivered" ? "bg-green-50 text-green-600" : o.status === "Return Requested" ? "bg-orange-50 text-orange-600" : o.status === "Return Approved" ? "bg-purple-50 text-purple-600" : o.status === "Shipped" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"}`}>{o.status === "Delivered" ? <Package className="w-5 h-5" /> : o.status === "Shipped" ? <Truck className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}</div>
+                              <div className="text-left"><h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">{o.orderId}</h4><span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} • ` : ""}{o.phone ? `${o.phone} • ` : ""}{o.date}</span></div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className={`inline-block text-[9px] font-bold uppercase px-3 py-1.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Return Requested" ? "bg-orange-50 text-orange-600 border-orange-200" : o.status === "Return Approved" ? "bg-purple-50 text-purple-600 border-purple-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span>
+                              <span className="text-lg font-bold text-[#0D3C6A]">₹{o.total.toFixed(2)}</span>
                             </div>
                           </div>
-                          <div className="space-y-4">
-                            <div><h5 className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold mb-2">Shipping Address</h5><p className="text-xs text-[#0D3C6A]/80 leading-relaxed">{o.shippingAddress}</p></div>
-                            <div className="flex gap-2">
-                              {o.status !== "Shipped" && o.status !== "Delivered" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Shipped")} className="flex-1 py-2.5 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider border border-blue-200 hover:bg-blue-100 transition-colors">Mark Shipped</button>)}
-                              {o.status !== "Delivered" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Delivered")} className="flex-1 py-2.5 rounded-xl bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-wider border border-green-200 hover:bg-green-100 transition-colors">Mark Delivered</button>)}
-                              {o.status === "Delivered" && (<span className="flex-1 py-2.5 rounded-xl bg-[#FAF6F0] text-[#00A896] text-[10px] font-bold uppercase tracking-wider text-center border border-[#B0B7C3]">{"\u2713"} FULFILLED</span>)}
+                          <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="md:col-span-2">
+                              <h5 className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold mb-3">Order Items</h5>
+                              <div className="flex flex-wrap gap-3">
+                                {o.items.map((item, iIdx) => {
+                                  const matchedProduct = PRODUCTS.find((pp) => pp.id === (item.productId || item.id));
+                                  const imgSrc = matchedProduct ? matchedProduct.image : item.image;
+                                  return (
+                                    <div key={iIdx} className="flex flex-col gap-2 bg-[#FAF6F0] border border-[#B0B7C3] rounded-xl p-3 w-full sm:w-auto">
+                                      <div className="flex items-center gap-3">
+                                        <div className="relative w-12 h-12 rounded-lg bg-white overflow-hidden shrink-0 border border-[#B0B7C3] p-0.5">{imgSrc && <Image data-pin-nopin="true" src={imgSrc} alt={item.name} fill sizes="48px" className="object-contain" />}</div>
+                                        <div className="text-left flex-grow">
+                                          <span className="text-xs font-semibold text-[#0D3C6A] block leading-tight">{item.name}</span>
+                                          <span className="text-[10px] text-[#00A896]">Qty: {item.quantity} • ₹{item.price.toFixed(2)}</span>
+                                          {item.returnStatus && (
+                                            <div className="mt-1">
+                                              <span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${item.returnStatus === 'Return Requested' ? 'bg-amber-50 text-amber-600 border-amber-200' : item.returnStatus === 'Return Approved' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>{item.returnStatus}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {item.returnStatus === "Return Requested" && (
+                                        <div className="flex gap-2 mt-2 pt-2 border-t border-[#B0B7C3]/50">
+                                          <button onClick={(e) => { e.stopPropagation(); handleUpdateItemReturnStatus(o.orderId, iIdx, "Return Approved"); }} className="flex-1 py-1.5 rounded-lg bg-green-50 text-green-600 text-[9px] font-bold uppercase tracking-wider border border-green-200 hover:bg-green-100 transition-colors">Approve</button>
+                                          <button onClick={(e) => { e.stopPropagation(); handleUpdateItemReturnStatus(o.orderId, iIdx, "Return Rejected"); }} className="flex-1 py-1.5 rounded-lg bg-red-50 text-red-600 text-[9px] font-bold uppercase tracking-wider border border-red-200 hover:bg-red-100 transition-colors">Reject</button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <div className="space-y-4">
+                              <div><h5 className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold mb-2">Shipping Address</h5><p className="text-xs text-[#0D3C6A]/80 leading-relaxed">{o.shippingAddress}</p></div>
+                              <div className="flex gap-2">
+                                {o.status !== "Shipped" && o.status !== "Delivered" && o.status !== "Return Requested" && o.status !== "Return Approved" && o.status !== "Returned" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Shipped")} className="flex-1 py-2.5 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider border border-blue-200 hover:bg-blue-100 transition-colors">Mark Shipped</button>)}
+                                {o.status !== "Delivered" && o.status !== "Return Requested" && o.status !== "Return Approved" && o.status !== "Returned" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Delivered")} className="flex-1 py-2.5 rounded-xl bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-wider border border-green-200 hover:bg-green-100 transition-colors">Mark Delivered</button>)}
+                                {o.status === "Return Requested" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Return Approved")} className="flex-1 py-2.5 rounded-xl bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider border border-purple-200 hover:bg-purple-100 transition-colors">Approve Return</button>)}
+                                {o.status === "Return Approved" && (<button onClick={() => handleUpdateOrderStatus(o.orderId, "Returned")} className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider border border-red-200 hover:bg-red-100 transition-colors">Mark Returned</button>)}
+                                {o.status === "Delivered" && (<span className="flex-1 py-2.5 rounded-xl bg-[#FAF6F0] text-[#00A896] text-[10px] font-bold uppercase tracking-wider text-center border border-[#B0B7C3]">{"\u2713"} FULFILLED</span>)}
+                                {o.status === "Returned" && (<span className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider text-center border border-red-200">{"\u2717"} RETURNED</span>)}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      ))}
                     {orders
                       .filter((o) => {
                         if (orderFilter !== "All" && o.status !== orderFilter) return false;
@@ -1133,7 +1252,7 @@ export default function AdminPanel() {
                         <div className="flex items-center gap-2 mt-4 text-[10px] text-[#00A896]"><Mail className="w-3 h-3 shrink-0" /><span className="truncate">{c.email}</span></div>
                         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#B0B7C3]/60">
                           <div><span className="text-[8px] uppercase tracking-widest text-[#00A896] font-bold block">Orders</span><span className="text-base font-bold text-[#0D3C6A]">{c.ordersCount}</span></div>
-                          <div><span className="text-[8px] uppercase tracking-widest text-[#00A896] font-bold block">Lifetime Value</span><span className="text-base font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(0)}</span></div>
+                          <div><span className="text-[8px] uppercase tracking-widest text-[#00A896] font-bold block">Lifetime Value</span><span className="text-base font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(2)}</span></div>
                         </div>
                         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#B0B7C3]/60">
                           <div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] border border-[#B0B7C3] p-0.5 overflow-hidden shrink-0">{c.fav && <Image data-pin-nopin="true" src={c.fav} alt="favourite" fill sizes="32px" className="object-contain" />}</div>
@@ -1155,7 +1274,7 @@ export default function AdminPanel() {
                               <td className="py-4 font-semibold text-[#0D3C6A] flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#BCAE9E] flex items-center justify-center text-[10px] font-bold text-[#0D3C6A]">{c.name.split(" ").map((n: string) => n[0]).join("")}</div>{c.name}</td>
                               <td className="py-4 text-[#00A896] font-medium">{c.email}</td>
                               <td className="py-4">{c.ordersCount} Orders</td>
-                              <td className="py-4 font-bold text-[#0D3C6A]">₹{c.ltv}</td>
+                              <td className="py-4 font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(2)}</td>
                               <td className="py-4"><Pill tone={c.tone as any}>{c.tier}</Pill></td>
                             </tr>
                           ))}
@@ -1167,51 +1286,58 @@ export default function AdminPanel() {
               )}
 
               {/* ============================ ANALYTICS ============================ */}
-              {activeSection === "Analytics" && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[
-                      { label: "Conversion Rate", value: `${conversionRate}%`, icon: TrendingUp, sub: "" },
-                      { label: "Avg. Order Value", value: `₹${avgOrderValue}`, icon: DollarSign, sub: "" },
-                      { label: "Bounce Rate", value: `${bounceRate}%`, icon: Zap, sub: "" },
-                      { label: "Return Rate", value: `${returnRate}%`, icon: Package, sub: "" },
-                    ].map((s) => { const SI = s.icon; return (<div key={s.label} className="bg-white border border-[#B0B7C3] rounded-2xl p-5 text-left"><div className="flex justify-between items-center mb-3"><span className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold">{s.label}</span><div className="w-8 h-8 rounded-xl bg-[#FAF6F0] flex items-center justify-center text-[#BCAE9E]"><SI className="w-4 h-4" /></div></div><span className="text-2xl font-bold text-[#0D3C6A]">{s.value}</span>{s.sub && <span className="text-[10px] text-green-500 block mt-1 font-medium">{s.sub}</span>}</div>); })}
+              {activeSection === "Analytics" && (() => {
+                const calculatedConversionRate = totalUsersCountReal > 0 ? ((customersList.length / totalUsersCountReal) * 100).toFixed(1) : "0.0";
+                const calculatedBounceRate = totalUsersCountReal > 0 ? (((totalUsersCountReal - customersList.length) / totalUsersCountReal) * 100).toFixed(1) : "0.0";
+                const returnedOrdersCount = orders.filter(o => o.status === "Returned").length;
+                const calculatedReturnRate = totalOrdersCount > 0 ? ((returnedOrdersCount / totalOrdersCount) * 100).toFixed(1) : "0.0";
+
+                return (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {[
+                        { label: "Conversion Rate", value: `${calculatedConversionRate}%`, icon: TrendingUp, sub: "" },
+                        { label: "Avg. Order Value", value: `₹${typeof avgOrderValue === 'number' ? avgOrderValue.toFixed(2) : avgOrderValue}`, icon: DollarSign, sub: "" },
+                        { label: "Bounce Rate", value: `${calculatedBounceRate}%`, icon: Zap, sub: "" },
+                        { label: "Return Rate", value: `${calculatedReturnRate}%`, icon: Package, sub: "" },
+                      ].map((s) => { const SI = s.icon; return (<div key={s.label} className="bg-white border border-[#B0B7C3] rounded-2xl p-5 text-left"><div className="flex justify-between items-center mb-3"><span className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold">{s.label}</span><div className="w-8 h-8 rounded-xl bg-[#FAF6F0] flex items-center justify-center text-[#BCAE9E]"><SI className="w-4 h-4" /></div></div><span className="text-2xl font-bold text-[#0D3C6A]">{s.value}</span>{s.sub && <span className="text-[10px] text-green-500 block mt-1 font-medium">{s.sub}</span>}</div>); })}
+                    </div>
+
+
+
+                    {/* NEW: Top products by revenue with images */}
+                    <Card className="p-6 text-left">
+                      <SectionHeader title="Top Products by Revenue" subtitle="Highest grossing SKUs this cycle" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                        {topProductsList.slice(0, 4).map((p, i) => (
+                          <div key={p.id} className="bg-[#FAF6F0]/50 border border-[#B0B7C3] rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="relative w-20 h-20 mb-3">{p.image && <Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="80px" className="object-contain" />}</div>
+                            <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold">#{i + 1}</span>
+                            <h4 className="text-xs font-semibold text-[#0D3C6A] mt-1 leading-tight">{p.name}</h4>
+                            <span className="text-sm font-bold text-[#0D3C6A] mt-2">₹{p.revenue.toFixed(2)}</span>
+                            <div className="w-full h-1 bg-[#B0B7C3] rounded-full overflow-hidden mt-2"><div className="h-full bg-[#BCAE9E]" style={{ width: `${p.pct}%` }} /></div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+
+                    {/* NEW: Geographic distribution */}
+                    <Card className="p-6 text-left">
+                      <div className="flex items-center justify-between mb-6 border-b border-[#B0B7C3] pb-3">
+                        <SectionHeader title="Top Regions" subtitle="Revenue by shipping geography" />
+                        <Globe className="w-5 h-5 text-[#BCAE9E]" />
+                      </div>
+                      <div className="space-y-4">
+                        {topRegionsList.length > 0 ? topRegionsList.map((r) => (
+                          <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toFixed(2)} • {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
+                        )) : (
+                          <div className="text-xs text-[#0D3C6A]">No regional data available yet.</div>
+                        )}
+                      </div>
+                    </Card>
                   </div>
-
-
-
-                  {/* NEW: Top products by revenue with images */}
-                  <Card className="p-6 text-left">
-                    <SectionHeader title="Top Products by Revenue" subtitle="Highest grossing SKUs this cycle" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-                      {topProductsList.slice(0, 4).map((p, i) => (
-                        <div key={p.id} className="bg-[#FAF6F0]/50 border border-[#B0B7C3] rounded-2xl p-4 flex flex-col items-center text-center">
-                          <div className="relative w-20 h-20 mb-3">{p.image && <Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="80px" className="object-contain" />}</div>
-                          <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold">#{i + 1}</span>
-                          <h4 className="text-xs font-semibold text-[#0D3C6A] mt-1 leading-tight">{p.name}</h4>
-                          <span className="text-sm font-bold text-[#0D3C6A] mt-2">₹{p.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                          <div className="w-full h-1 bg-[#B0B7C3] rounded-full overflow-hidden mt-2"><div className="h-full bg-[#BCAE9E]" style={{ width: `${p.pct}%` }} /></div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-
-                  {/* NEW: Geographic distribution */}
-                  <Card className="p-6 text-left">
-                    <div className="flex items-center justify-between mb-6 border-b border-[#B0B7C3] pb-3">
-                      <SectionHeader title="Top Regions" subtitle="Revenue by shipping geography" />
-                      <Globe className="w-5 h-5 text-[#BCAE9E]" />
-                    </div>
-                    <div className="space-y-4">
-                      {topRegionsList.length > 0 ? topRegionsList.map((r) => (
-                        <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
-                      )) : (
-                        <div className="text-xs text-[#0D3C6A]">No regional data available yet.</div>
-                      )}
-                    </div>
-                  </Card>
-                </div>
-              )}
+                );
+              })}
 
               {/* ============================ DISCOUNTS ============================ */}
               {activeSection === "Discounts" && (
@@ -1376,12 +1502,12 @@ export default function AdminPanel() {
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Free Shipping Threshold</label>
                         <p className="text-[10px] text-[#0D3C6A]/70 mb-2">Orders above this amount will get free shipping automatically.</p>
-                        <input type="number" value={formSettings.freeShippingThreshold} onChange={e => setFormSettings({...formSettings, freeShippingThreshold: e.target.value === '' ? '' as any : Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
+                        <input type="number" value={formSettings.freeShippingThreshold} onChange={e => setFormSettings({ ...formSettings, freeShippingThreshold: e.target.value === '' ? '' as any : Number(e.target.value) })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
                       </div>
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Standard Shipping Rate</label>
                         <p className="text-[10px] text-[#0D3C6A]/70 mb-2">Default delivery charge for orders below the threshold.</p>
-                        <input type="number" value={formSettings.standardShippingRate} onChange={e => setFormSettings({...formSettings, standardShippingRate: e.target.value === '' ? '' as any : Number(e.target.value)})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
+                        <input type="number" value={formSettings.standardShippingRate} onChange={e => setFormSettings({ ...formSettings, standardShippingRate: e.target.value === '' ? '' as any : Number(e.target.value) })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" />
                       </div>
                     </div>
                   </Card>
@@ -1394,10 +1520,10 @@ export default function AdminPanel() {
                   <Card className="p-8 space-y-6">
                     <SectionHeader title="Store Details" subtitle="Configure store configuration values" />
                     <div className="space-y-4">
-                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Store Brand Name</label><input type="text" value={formSettings.brandName} onChange={e => setFormSettings({...formSettings, brandName: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
-                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Store Currency</label><input type="text" value={formSettings.currency} onChange={e => setFormSettings({...formSettings, currency: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
-                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Support Contact Email</label><input type="email" value={formSettings.supportEmail} onChange={e => setFormSettings({...formSettings, supportEmail: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
-                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Announcement Promo Text</label><input type="text" value={formSettings.promoText} onChange={e => setFormSettings({...formSettings, promoText: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
+                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Store Brand Name</label><input type="text" value={formSettings.brandName} onChange={e => setFormSettings({ ...formSettings, brandName: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
+                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Store Currency</label><input type="text" value={formSettings.currency} onChange={e => setFormSettings({ ...formSettings, currency: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
+                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Support Contact Email</label><input type="email" value={formSettings.supportEmail} onChange={e => setFormSettings({ ...formSettings, supportEmail: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
+                      <div className="flex flex-col space-y-1"><label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Announcement Promo Text</label><input type="text" value={formSettings.promoText} onChange={e => setFormSettings({ ...formSettings, promoText: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none" /></div>
                       <button onClick={handleSaveSettings} className="w-full bg-[#BCAE9E] text-black font-bold text-xs uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-md hover:opacity-90">Save configurations</button>
                     </div>
                   </Card>
@@ -1410,46 +1536,46 @@ export default function AdminPanel() {
                       <SectionHeader title="Footer Configuration" subtitle="Manage storefront footer content and links" />
                       <button onClick={handleSaveSettings} className="bg-[#BCAE9E] text-black font-bold text-[10px] uppercase tracking-widest px-6 py-2 rounded-xl transition-all shadow-sm hover:opacity-90">Save Settings</button>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="flex flex-col space-y-1 col-span-1 md:col-span-2">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Brand Description</label>
-                        <textarea rows={2} value={formSettings.footerBrandDescription} onChange={e => setFormSettings({...formSettings, footerBrandDescription: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none" placeholder="Elevated skincare made with clean ingredients..." />
+                        <textarea rows={2} value={formSettings.footerBrandDescription} onChange={e => setFormSettings({ ...formSettings, footerBrandDescription: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none" placeholder="Elevated skincare made with clean ingredients..." />
                       </div>
 
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Shop Links (Format: Label|URL)</label>
-                        <textarea rows={5} value={formSettings.footerShopLinks} onChange={e => setFormSettings({...formSettings, footerShopLinks: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="All Products|/shop" />
+                        <textarea rows={5} value={formSettings.footerShopLinks} onChange={e => setFormSettings({ ...formSettings, footerShopLinks: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="All Products|/shop" />
                       </div>
-                      
+
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Collections Links (Format: Label|URL)</label>
-                        <textarea rows={5} value={formSettings.footerCollectionsLinks} onChange={e => setFormSettings({...formSettings, footerCollectionsLinks: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="Hydration|/shop?category=Moisturizers" />
+                        <textarea rows={5} value={formSettings.footerCollectionsLinks} onChange={e => setFormSettings({ ...formSettings, footerCollectionsLinks: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="Hydration|/shop?category=Moisturizers" />
                       </div>
-                      
+
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">About Links (Format: Label|URL)</label>
-                        <textarea rows={5} value={formSettings.footerAboutLinks} onChange={e => setFormSettings({...formSettings, footerAboutLinks: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="Our Story|/about" />
+                        <textarea rows={5} value={formSettings.footerAboutLinks} onChange={e => setFormSettings({ ...formSettings, footerAboutLinks: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="Our Story|/about" />
                       </div>
 
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Help Links (Format: Label|URL)</label>
-                        <textarea rows={5} value={formSettings.footerHelpLinks} onChange={e => setFormSettings({...formSettings, footerHelpLinks: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="FAQ|/faq" />
+                        <textarea rows={5} value={formSettings.footerHelpLinks} onChange={e => setFormSettings({ ...formSettings, footerHelpLinks: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-3 text-xs text-[#0D3C6A] focus:outline-none resize-none font-mono" placeholder="FAQ|/faq" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-[#B0B7C3]/50">
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Instagram URL</label>
-                        <input type="text" value={formSettings.footerSocialInstagram} onChange={e => setFormSettings({...formSettings, footerSocialInstagram: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-2 text-xs text-[#0D3C6A] focus:outline-none" />
+                        <input type="text" value={formSettings.footerSocialInstagram} onChange={e => setFormSettings({ ...formSettings, footerSocialInstagram: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-2 text-xs text-[#0D3C6A] focus:outline-none" />
                       </div>
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">Pinterest URL</label>
-                        <input type="text" value={formSettings.footerSocialPinterest} onChange={e => setFormSettings({...formSettings, footerSocialPinterest: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-2 text-xs text-[#0D3C6A] focus:outline-none" />
+                        <input type="text" value={formSettings.footerSocialPinterest} onChange={e => setFormSettings({ ...formSettings, footerSocialPinterest: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-2 text-xs text-[#0D3C6A] focus:outline-none" />
                       </div>
                       <div className="flex flex-col space-y-1">
                         <label className="text-[9px] uppercase tracking-wider text-[#00A896] font-semibold">TikTok URL</label>
-                        <input type="text" value={formSettings.footerSocialTiktok} onChange={e => setFormSettings({...formSettings, footerSocialTiktok: e.target.value})} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-2 text-xs text-[#0D3C6A] focus:outline-none" />
+                        <input type="text" value={formSettings.footerSocialTiktok} onChange={e => setFormSettings({ ...formSettings, footerSocialTiktok: e.target.value })} className="bg-[#FAF6F0] border border-[#5BA6D6] rounded-xl px-4 py-2 text-xs text-[#0D3C6A] focus:outline-none" />
                       </div>
                     </div>
                   </Card>
@@ -1525,21 +1651,25 @@ export default function AdminPanel() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button onClick={() => setSelectedOrder(null)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-[#FAF6F0] text-[#00A896] hover:bg-[#0D3C6A] hover:text-white transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
 
               <h2 className="font-serif text-2xl text-[#0D3C6A] uppercase tracking-wider border-b border-[#B0B7C3] pb-4 mb-6">Order {selectedOrder.orderId}</h2>
 
-              <div className="grid grid-cols-2 gap-6 mb-8 bg-[#FAF6F0]/50 p-6 rounded-2xl border border-[#B0B7C3]/50 text-left">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-8 bg-[#FAF6F0]/50 p-6 rounded-2xl border border-[#B0B7C3]/50 text-left">
                 <div>
                   <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-1">Customer</p>
                   <p className="text-sm font-semibold text-[#0D3C6A]">{selectedOrder.customerName || "N/A"}</p>
                 </div>
                 <div>
+                  <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-1">Phone</p>
+                  <p className="text-sm font-semibold text-[#0D3C6A]">{selectedOrder.phone || "N/A"}</p>
+                </div>
+                <div>
                   <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-1">Date</p>
                   <p className="text-sm font-semibold text-[#0D3C6A]">{selectedOrder.date}</p>
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 sm:col-span-3">
                   <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-1">Shipping Address</p>
                   <p className="text-sm text-[#0D3C6A] leading-relaxed">{selectedOrder.shippingAddress}</p>
                 </div>
@@ -1556,7 +1686,7 @@ export default function AdminPanel() {
                       <p className="text-xs font-bold text-[#0D3C6A] truncate">{item.name}</p>
                       <p className="text-[10px] text-[#00A896] uppercase tracking-widest">Qty: {item.quantity}</p>
                     </div>
-                    <span className="text-sm font-bold text-[#0D3C6A] shrink-0">₹{(item.price * item.quantity)}</span>
+                    <span className="text-sm font-bold text-[#0D3C6A] shrink-0">₹{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -1564,21 +1694,45 @@ export default function AdminPanel() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-[#B0B7C3] pt-6 gap-4">
                 <div className="w-full sm:w-auto">
                   <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-2 text-left">Update Status</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(["Processing", "Shipped", "Delivered"] as const).map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setPendingStatusUpdate({ orderId: selectedOrder.orderId, status: s })}
-                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${selectedOrder.status === s ? "bg-[#0D3C6A] text-white border-[#0D3C6A]" : "bg-white text-[#00A896] border-[#B0B7C3] hover:border-[#0D3C6A] hover:text-[#0D3C6A]"}`}
-                      >
-                        {s}
-                      </button>
-                    ))}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      {(["Processing", "Shipped", "Delivered", "Return Requested", "Return Approved", "Returned"] as const).map(s => {
+                        if ((s === "Return Requested" || s === "Return Approved" || s === "Returned") && selectedOrder.status !== s) return null;
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => setPendingStatusUpdate({ orderId: selectedOrder.orderId, status: s })}
+                            className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${selectedOrder.status === s ? "bg-[#0D3C6A] text-white border-[#0D3C6A]" : "bg-white text-[#00A896] border-[#B0B7C3] hover:border-[#0D3C6A] hover:text-[#0D3C6A]"}`}
+                          >
+                            {s === "Return Requested" ? "Return Request" : s}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {selectedOrder.status === "Return Requested" && (
+                      <div className="flex gap-2">
+                        <button onClick={() => setPendingStatusUpdate({ orderId: selectedOrder.orderId, status: "Return Approved" })} className="px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border bg-green-50 text-green-600 border-green-200 hover:bg-green-100">
+                          Approve
+                        </button>
+                        <button onClick={() => setPendingStatusUpdate({ orderId: selectedOrder.orderId, status: "Delivered" })} className="px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border bg-red-50 text-red-600 border-red-200 hover:bg-red-100">
+                          Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {selectedOrder.status === "Return Approved" && (
+                      <div className="flex gap-2">
+                        <button onClick={() => setPendingStatusUpdate({ orderId: selectedOrder.orderId, status: "Returned" })} className="px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border bg-[#0D3C6A] text-white border-[#0D3C6A] hover:opacity-90">
+                          Mark Returned
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-right w-full sm:w-auto bg-[#FAF6F0] p-4 rounded-xl border border-[#B0B7C3]">
                   <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-1">Grand Total</p>
-                  <p className="text-xl font-bold text-[#0D3C6A]">₹{selectedOrder.total}</p>
+                  <p className="text-xl font-bold text-[#0D3C6A]">₹{selectedOrder.total.toFixed(2)}</p>
                 </div>
               </div>
             </div>

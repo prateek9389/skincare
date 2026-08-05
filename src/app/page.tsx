@@ -9,7 +9,6 @@ import ServicesBento from "@/components/ServicesBento";
 import HorizontalScrollGallery from "@/components/HorizontalScrollGallery";
 import InstagramBento from "@/components/InstagramBento";
 import FullscreenExpansion from "@/components/FullscreenExpansion";
-import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 import { Product } from "@/data/products";
 import Lenis from "lenis";
@@ -192,7 +191,6 @@ export default function Home() {
         <HorizontalScrollGallery />
         <InstagramBento />
         <FullscreenExpansion onAddToCart={handleAddToCart} />
-        <Newsletter />
       </main>
 
       {/* Footer */}
@@ -207,7 +205,7 @@ export default function Home() {
             onClick={() => setToastMessage(null)}
             className="text-[#00A896] hover:text-[#FFFFFF] transition-colors ml-2"
           >
-            âœ•
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
       )}

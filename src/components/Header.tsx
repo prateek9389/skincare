@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Product } from "@/data/products";
+import { Product, PRODUCTS } from "@/data/products";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
@@ -11,6 +11,7 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStoreSettings } from "@/lib/useStoreSettings";
+import Fuse from "fuse.js";
 
 interface CartItem {
   product: Product;
@@ -37,22 +38,47 @@ export default function Header({
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Fuzzy search setup
+  const searchResults = React.useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const fuse = new Fuse(PRODUCTS, {
+      keys: ["name", "category", "description"],
+      threshold: 0.3,
+      includeScore: true,
+    });
+    return fuse.search(searchQuery).map(res => res.item).slice(0, 5);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [isSearchOpen]);
 
   useEffect(() => {
     const handleOpenAuth = () => setIsAuthModalOpen(true);
+    const handleOpenSearch = () => setIsSearchOpen(true);
     window.addEventListener('open-auth-modal', handleOpenAuth);
-    return () => window.removeEventListener('open-auth-modal', handleOpenAuth);
+    window.addEventListener('open-search-modal', handleOpenSearch);
+    return () => {
+      window.removeEventListener('open-auth-modal', handleOpenAuth);
+      window.removeEventListener('open-search-modal', handleOpenSearch);
+    };
   }, []);
 
   const { settings } = useStoreSettings();
 
-  const promos = settings.promoText 
+  const promos = settings.promoText
     ? [settings.promoText]
     : [
-        `FREE SHIPPING ON ORDERS OVER ₹${settings.freeShippingThreshold || 499}`,
-        "COMPLIMENTARY SAMPLES WITH EVERY ORDER",
-        "USA (INR) ₹",
-      ];
+      `FREE SHIPPING ON ORDERS OVER ₹${settings.freeShippingThreshold || 499}`,
+      "COMPLIMENTARY SAMPLES WITH EVERY ORDER",
+      "USA (INR) ₹",
+    ];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -65,7 +91,7 @@ export default function Header({
 
   useEffect(() => {
     let unsubscribeDoc: (() => void) | undefined;
-    
+
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -140,8 +166,8 @@ export default function Header({
 
           {/* Left Menu Items (Desktop) */}
           <nav className="hidden lg:flex flex-1 items-center space-x-8 text-xs font-semibold tracking-widest text-[#0D3C6A] uppercase">
-            <a href="/shop" className="hover:text-[#BCAE9E] transition-colors">Shop</a>
             <a href="/" className="hover:text-[#BCAE9E] transition-colors">Home</a>
+            <a href="/shop" className="hover:text-[#BCAE9E] transition-colors">Shop</a>
             <a href="/collections" className="hover:text-[#BCAE9E] transition-colors">Collections</a>
           </nav>
 
@@ -168,7 +194,7 @@ export default function Header({
 
             <div className="flex items-center space-x-4 text-[#0D3C6A]">
               {/* Search */}
-              <button aria-label="Search" className="p-1 hover:text-[#BCAE9E] transition-colors">
+              <button aria-label="Search" onClick={() => setIsSearchOpen(true)} className="p-1 hover:text-[#BCAE9E] transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -176,7 +202,7 @@ export default function Header({
 
               {/* Profile */}
               <div className="relative" ref={dropdownRef}>
-                <button 
+                <button
                   onClick={() => {
                     if (user) {
                       setIsProfileDropdownOpen(!isProfileDropdownOpen);
@@ -184,7 +210,7 @@ export default function Header({
                       setIsAuthModalOpen(true);
                     }
                   }}
-                  aria-label="Account" 
+                  aria-label="Account"
                   className="p-1 hover:text-[#BCAE9E] transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,10 +230,11 @@ export default function Header({
                     >
                       Profile
                     </Link>
-                    <button 
-                      onClick={() => {
-                        signOut(auth);
+                    <button
+                      onClick={async () => {
+                        await signOut(auth);
                         setIsProfileDropdownOpen(false);
+                        setIsAuthModalOpen(true);
                       }}
                       className="w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-widest hover:bg-neutral-50 transition-colors text-red-500"
                     >
@@ -218,9 +245,9 @@ export default function Header({
               </div>
 
               {/* Cart Toggle */}
-              <button 
+              <button
                 onClick={() => setIsCartOpen(true)}
-                aria-label="Cart" 
+                aria-label="Cart"
                 className="p-1 relative hover:text-[#BCAE9E] transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,18 +264,89 @@ export default function Header({
         </div>
       </header>
 
+      {/* Search Overlay Modal */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[#B0B7C3]"
+            >
+              <div className="p-6 flex items-center border-b border-[#B0B7C3]/50">
+                <svg className="w-5 h-5 text-[#00A896] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search products, categories..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent border-none outline-none text-[#0D3C6A] placeholder-[#B0B7C3] font-serif text-lg"
+                />
+                <button onClick={() => { setIsSearchOpen(false); setSearchQuery(""); }} className="ml-3 text-[#0D3C6A] hover:text-[#BCAE9E] transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-4 max-h-[60vh] overflow-y-auto">
+                {searchQuery.trim() ? (
+                  searchResults.length > 0 ? (
+                    <div className="space-y-2">
+                      {searchResults.map((product) => (
+                        <Link
+                          key={product.id}
+                          href={`/product/${product.id}`}
+                          onClick={() => { setIsSearchOpen(false); setSearchQuery(""); }}
+                          className="flex items-center gap-4 p-3 rounded-2xl hover:bg-[#FAF6F0] transition-colors border border-transparent hover:border-[#B0B7C3]/50 group"
+                        >
+                          <div className="relative w-16 h-16 bg-white border border-[#B0B7C3] rounded-xl overflow-hidden p-1 shrink-0">
+                            {(product.mainImage || product.image) ? (
+                              <Image data-pin-nopin="true" src={product.mainImage || product.image} alt={product.name} fill sizes="64px" className="object-contain group-hover:scale-105 transition-transform" />
+                            ) : (
+                              <div className="w-full h-full bg-[#FAF6F0] rounded-lg flex items-center justify-center text-[8px] text-[#B0B7C3] uppercase">No Img</div>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold block">{product.category}</span>
+                            <h4 className="text-sm font-semibold text-[#0D3C6A] leading-tight mt-0.5">{product.name}</h4>
+                            <span className="text-xs font-bold text-[#0D3C6A] mt-1 block">₹{product.price.toFixed(2)}</span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <p className="text-sm text-[#0D3C6A] font-semibold">No results found for "{searchQuery}"</p>
+                      <p className="text-xs text-[#00A896] mt-1">Try a different keyword or category.</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-xs text-[#00A896] uppercase tracking-widest font-bold">Start typing to search...</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Menu Sidebar */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 overflow-hidden lg:hidden">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
-              onClick={() => setIsMobileMenuOpen(false)} 
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
             />
-            <motion.div 
+            <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
@@ -273,10 +371,10 @@ export default function Header({
                   className="flex flex-col space-y-8"
                 >
                   <motion.div variants={{ hidden: { x: -20, opacity: 0 }, visible: { x: 0, opacity: 1 } }}>
-                    <a href="/shop" className="hover:text-[#00A896] transition-all block" onClick={() => setIsMobileMenuOpen(false)}>Shop</a>
+                    <a href="/" className="hover:text-[#00A896] transition-all block" onClick={() => setIsMobileMenuOpen(false)}>Home</a>
                   </motion.div>
                   <motion.div variants={{ hidden: { x: -20, opacity: 0 }, visible: { x: 0, opacity: 1 } }}>
-                    <a href="/" className="hover:text-[#00A896] transition-all block" onClick={() => setIsMobileMenuOpen(false)}>Home</a>
+                    <a href="/shop" className="hover:text-[#00A896] transition-all block" onClick={() => setIsMobileMenuOpen(false)}>Shop</a>
                   </motion.div>
                   <motion.div variants={{ hidden: { x: -20, opacity: 0 }, visible: { x: 0, opacity: 1 } }}>
                     <a href="/collections" className="hover:text-[#00A896] transition-all block" onClick={() => setIsMobileMenuOpen(false)}>Collections</a>
@@ -291,7 +389,7 @@ export default function Header({
               </nav>
               <div className="p-6 border-t border-[#B0B7C3] flex gap-4">
                 <div className="text-[10px] text-[#00A896] uppercase tracking-widest leading-relaxed">
-                  GUNALIFE<br/>Advanced Longevity
+                  GUNALIFE<br />Advanced Longevity
                 </div>
               </div>
             </motion.div>
@@ -320,7 +418,7 @@ export default function Header({
                     </svg>
                   </button>
                 </div>
-                
+
                 {/* Free Shipping Progress */}
                 <div className="bg-[#FAF6F0] rounded-xl p-4 text-center border border-[#B0B7C3] mt-2">
                   {amountRemaining > 0 ? (
@@ -333,8 +431,8 @@ export default function Header({
                     </p>
                   )}
                   <div className="w-full h-1.5 bg-gray-200 rounded-full mt-3 overflow-hidden">
-                    <div 
-                      className="h-full bg-[#00A896] transition-all duration-500 ease-out" 
+                    <div
+                      className="h-full bg-[#00A896] transition-all duration-500 ease-out"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -436,10 +534,10 @@ export default function Header({
       )}
 
       {/* Auth Modal */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-        onSuccess={() => setIsAuthModalOpen(false)} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={() => setIsAuthModalOpen(false)}
         initialIsLogin={true}
       />
     </>

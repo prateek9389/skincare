@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
@@ -102,7 +102,7 @@ export default function ThankYouPage() {
                       <p className="text-[10px] text-[#00A896] uppercase tracking-wider">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-semibold">₹{(item.price * item.quantity)}</span>
+                  <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>

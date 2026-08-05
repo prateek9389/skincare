@@ -102,6 +102,7 @@ export default function PromoScrub() {
 
         {/* Circular search sparkle button */}
         <motion.button
+          onClick={() => window.dispatchEvent(new Event('open-search-modal'))}
           initial={{ opacity: 0, scale: 0.8 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
