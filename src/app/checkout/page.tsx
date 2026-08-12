@@ -6,11 +6,11 @@ import Footer from "@/components/Footer";
 import Image from "next/image";
 import { Product } from "@/data/products";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "@/components/AuthModal";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, addDoc, doc, setDoc, getDoc, getDocs, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, getDoc, getDocs, serverTimestamp, onSnapshot, runTransaction } from "firebase/firestore";
 import { useStoreSettings } from "@/lib/useStoreSettings";
 
 interface CartItem {
@@ -62,6 +62,7 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
   const [discountCode, setDiscountCode] = useState("");
   const [discountError, setDiscountError] = useState("");
+  const [showCouponDropdown, setShowCouponDropdown] = useState(false);
 
   // Sync cart with localStorage
   useEffect(() => {
@@ -243,7 +244,7 @@ export default function CheckoutPage() {
       if (!formData.cardNumber.match(/^\d{16}$/)) newErrors.cardNumber = "Please enter a valid 16-digit card number";
       if (!formData.expiry.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) newErrors.expiry = "Use MM/YY format";
       if (!formData.cvv.match(/^\d{3}$/)) newErrors.cvv = "Enter 3-digit CVV";
-    } else if (["upi", "phonepe", "gpay"].includes(paymentMethod)) {
+    } else if (paymentMethod === "upi") {
       if (!upiId.match(/^[\w.-]+@[\w.-]+$/)) newErrors.upiId = "Please enter a valid UPI ID (e.g. name@upi)";
     }
     // COD requires no additional validation
@@ -289,8 +290,27 @@ export default function CheckoutPage() {
         }, { merge: true });
       }
 
-      // 2. Generate Order details
-      const orderId = `GUNALIFE-${Math.floor(100000 + Math.random() * 900000)}`;
+      // 2. Generate sequential Order ID using Firestore transaction
+      const counterRef = doc(db, "metadata", "counters");
+      let nextOrderNumber = 1;
+      
+      try {
+        await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterRef);
+          if (!counterDoc.exists()) {
+            transaction.set(counterRef, { orderCount: 1 });
+          } else {
+            nextOrderNumber = (counterDoc.data().orderCount || 0) + 1;
+            transaction.update(counterRef, { orderCount: nextOrderNumber });
+          }
+        });
+      } catch (err) {
+        console.error("Failed to generate sequential ID, falling back to random:", err);
+        nextOrderNumber = Math.floor(100000 + Math.random() * 900000);
+      }
+
+      const formattedNumber = nextOrderNumber.toString().padStart(3, '0');
+      const orderId = `GUNALIFE-${formattedNumber}`;
       const orderDate = new Date().toLocaleString("en-US", {
         year: "numeric",
         month: "long",
@@ -320,8 +340,12 @@ export default function CheckoutPage() {
         })),
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
         status: "Processing",
+        statusTimeline: [{ status: "Processing", timestamp: new Date().toISOString() }],
         couponCode: appliedCoupon ? appliedCoupon.code || appliedCoupon.id : null,
         discountAmount: discountAmount,
+        subtotal: subtotal,
+        shippingCost: shippingCost,
+        taxAmount: taxAmount,
       };
 
       // 3. Save new order to Firestore
@@ -525,8 +549,6 @@ export default function CheckoutPage() {
                     {[
                       { id: 'card', label: 'Cards' },
                       { id: 'upi', label: 'UPI' },
-                      { id: 'phonepe', label: 'PhonePe' },
-                      { id: 'gpay', label: 'Google Pay' },
                       { id: 'cod', label: 'Cash on Delivery' },
                     ].map((method) => (
                       <label key={method.id} className={`flex items-center justify-center gap-2 p-3 border rounded-xl cursor-pointer transition-all text-center ${paymentMethod === method.id ? 'border-[#0D3C6A] bg-[#0D3C6A] text-white shadow-md' : 'border-[#B0B7C3] text-[#0D3C6A] hover:bg-neutral-50 hover:border-[#5BA6D6]'}`}>
@@ -592,7 +614,7 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {(paymentMethod === 'upi' || paymentMethod === 'phonepe' || paymentMethod === 'gpay') && (
+                  {paymentMethod === 'upi' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <div className="flex flex-col space-y-1">
                         <label className="text-[10px] uppercase tracking-wider text-[#00A896]">UPI ID / VPA</label>
@@ -608,7 +630,7 @@ export default function CheckoutPage() {
                         />
                         {errors.upiId && <span className="text-[10px] text-red-500">{errors.upiId}</span>}
                         <p className="text-[10px] text-[#00A896] mt-2">
-                          {paymentMethod === 'phonepe' ? "A payment request will be sent to your PhonePe app." : paymentMethod === 'gpay' ? "A payment request will be sent to your Google Pay app." : "A payment request will be sent to your UPI app."} Complete the payment there to finalize your order.
+                          A payment request will be sent to your UPI app. Complete the payment there to finalize your order.
                         </p>
                       </div>
                     </div>
@@ -636,7 +658,7 @@ export default function CheckoutPage() {
                     type="submit"
                     className="flex-1 bg-[#0D3C6A] hover:bg-[#383838] text-white py-4 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-lg"
                   >
-                    Place Order (₹{grandTotal.toFixed(2)})
+                    Place Order (₹{grandTotal.toFixed(2).replace(/\.00$/, "")})
                   </button>
                 </div>
               </form>
@@ -666,7 +688,7 @@ export default function CheckoutPage() {
                     <div className="flex justify-between items-start">
                       <h4 className="font-serif text-xs font-semibold text-[#0D3C6A] line-clamp-2 leading-tight pr-2">{item.product.name}</h4>
                       <span className="text-xs font-semibold text-[#0D3C6A] whitespace-nowrap">
-                        ₹{(item.product.price * item.quantity).toFixed(2)}
+                        ₹{(item.product.price * item.quantity).toFixed(2).replace(/\.00$/, "")}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 mt-auto">
@@ -685,22 +707,82 @@ export default function CheckoutPage() {
             {/* Discount Promo Box */}
             <div className="border-t border-[#B0B7C3] pt-4 space-y-2">
               <label className="text-[9px] uppercase tracking-wider text-[#00A896] block">Discount Code</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 relative">
                 <input
                   type="text"
                   placeholder="Enter code"
                   value={discountCode}
+                  onFocus={() => setShowCouponDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowCouponDropdown(false), 200)}
                   onChange={(e) => setDiscountCode(e.target.value)}
                   className="flex-grow border border-[#5BA6D6] rounded-xl px-3 py-2 text-xs bg-white focus:outline-none uppercase"
                 />
+
+                {/* Autocomplete Dropdown */}
+                <AnimatePresence>
+                  {showCouponDropdown && applicableCouponsForCart.length > 0 && !appliedCoupon && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="absolute top-full left-0 mt-1 w-[calc(100%-80px)] bg-white border border-[#B0B7C3] rounded-xl shadow-lg overflow-hidden z-20 max-h-40 overflow-y-auto"
+                    >
+                      {applicableCouponsForCart.map(c => (
+                        <div
+                          key={c.code || c.id}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            applyDiscount(c.code || c.id);
+                            setShowCouponDropdown(false);
+                          }}
+                          className="px-4 py-2 hover:bg-[#FAF6F0] cursor-pointer border-b border-[#B0B7C3]/30 last:border-0"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-[11px] font-bold text-[#0D3C6A] uppercase tracking-wider">{c.code || c.id}</span>
+                            <span className="text-[10px] text-[#00A896] font-semibold">{c.discount}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <button
-                  onClick={() => applyDiscount(discountCode)}
-                  className="bg-black text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl hover:opacity-85"
+                  onClick={() => {
+                    if (!appliedCoupon) {
+                      if (!discountCode.trim()) {
+                        setShowCouponDropdown(!showCouponDropdown);
+                      } else {
+                        applyDiscount(discountCode);
+                        setShowCouponDropdown(false);
+                      }
+                    }
+                  }}
+                  disabled={!!appliedCoupon}
+                  className={`text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl transition-colors shrink-0 ${
+                    appliedCoupon 
+                      ? "bg-green-600 text-white" 
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  }`}
                 >
-                  Apply
+                  {appliedCoupon ? "Applied" : "Apply"}
                 </button>
               </div>
-              {appliedCoupon && <span className="text-[10px] text-green-600 block">✨ {appliedCoupon.discount} code applied!</span>}
+              {appliedCoupon && (
+                <div className="flex flex-col space-y-1 mt-1">
+                  <span className="text-[10px] text-green-600 block">✨ {appliedCoupon.discount} code applied!</span>
+                  <button
+                    onClick={() => {
+                      setAppliedCoupon(null);
+                      setDiscountCode("");
+                      setDiscountError("");
+                    }}
+                    className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors w-max"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
               {discountError && <span className="text-[10px] text-red-500 block">{discountError}</span>}
 
               {applicableCouponsForCart.length > 0 && !appliedCoupon && (
@@ -725,12 +807,12 @@ export default function CheckoutPage() {
             <div className="border-t border-[#B0B7C3] pt-4 space-y-3.5 text-xs text-[#00A896] tracking-wide">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="text-[#0D3C6A] font-medium">₹{subtotal.toFixed(2)}</span>
+                <span className="text-[#0D3C6A] font-medium">₹{subtotal.toFixed(2).replace(/\.00$/, "")}</span>
               </div>
               {appliedCoupon && discountAmount > 0 && (
                 <div className="flex justify-between text-green-600 font-medium">
                   <span>Discount ({appliedCoupon.discount})</span>
-                  <span>-₹{discountAmount.toFixed(2)}</span>
+                  <span>-₹{discountAmount.toFixed(2).replace(/\.00$/, "")}</span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -741,11 +823,11 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between">
                 <span>Sales Tax (8%)</span>
-                <span className="text-[#0D3C6A] font-medium">₹{taxAmount.toFixed(2)}</span>
+                <span className="text-[#0D3C6A] font-medium">₹{taxAmount.toFixed(2).replace(/\.00$/, "")}</span>
               </div>
               <div className="flex justify-between text-sm text-[#0D3C6A] font-bold uppercase tracking-wider border-t border-[#B0B7C3] pt-3">
                 <span>Total Amount</span>
-                <span>₹{grandTotal.toFixed(2)}</span>
+                <span>₹{grandTotal.toFixed(2).replace(/\.00$/, "")}</span>
               </div>
             </div>
 

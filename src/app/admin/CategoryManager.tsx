@@ -1,11 +1,12 @@
-﻿"use client";
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import Fuse from "fuse.js";
 
 export interface Category {
   id: string;
@@ -147,6 +148,12 @@ export default function CategoryManager({ searchQuery = "" }: { searchQuery?: st
     );
   }
 
+  const filteredCategories = (() => {
+    if (!searchQuery) return categories;
+    const fuse = new Fuse(categories, { keys: ["name", "description"], threshold: 0.3 });
+    return fuse.search(searchQuery).map(res => res.item);
+  })();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-white border border-[#B0B7C3] rounded-3xl p-6 shadow-sm">
@@ -161,11 +168,7 @@ export default function CategoryManager({ searchQuery = "" }: { searchQuery?: st
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
-          {categories.filter((cat) => {
-          if (!searchQuery) return true;
-          const q = searchQuery.toLowerCase();
-          return cat.name.toLowerCase().includes(q) || cat.description.toLowerCase().includes(q);
-        }).map((cat) => (
+          {filteredCategories.map((cat) => (
             <motion.div key={cat.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white border border-[#B0B7C3] rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col">
               <div className="relative h-48 bg-[#FAF6F0] border-b border-[#B0B7C3] flex items-center justify-center p-4">
                 {cat.image ? (

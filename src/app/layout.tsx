@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${plusJakarta.variable} h-full antialiased`}
+      className={`${playfair.variable} ${plusJakarta.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#0D3C6A]">
+      <body className="min-h-screen flex flex-col bg-[#FFFFFF] text-[#0D3C6A]">
         {children}
       </body>
     </html>

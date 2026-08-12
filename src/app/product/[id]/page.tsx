@@ -44,11 +44,6 @@ export default function ProductDetailPage() {
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [reviewName, setReviewName] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState<{label: string, price: number, image?: string} | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -59,7 +54,8 @@ export default function ProductDetailPage() {
   useEffect(() => {
     const fetchProductData = async () => {
       try {
-        const prodDoc = await getDoc(doc(db, "products", id as string));
+        const decodedId = decodeURIComponent(id as string);
+        const prodDoc = await getDoc(doc(db, "products", decodedId));
         if (prodDoc.exists()) {
           const prodData = prodDoc.data() as FirestoreProduct;
           
@@ -223,34 +219,6 @@ export default function ProductDetailPage() {
       return [...prev, { product: legacyProductFormat, quantity: 1 }];
     });
     setToastMessage(`✨ ${legacyProductFormat.name} added to bag.`);
-  };
-
-
-  const submitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reviewName.trim() || !reviewComment.trim()) return;
-    setReviewSubmitting(true);
-    try {
-      await addDoc(collection(db, "reviews"), {
-        productId: id,
-        clientName: reviewName.trim(),
-        rating: reviewRating,
-        comment: reviewComment.trim(),
-        status: "pending",
-        createdAt: serverTimestamp()
-      });
-      setReviewSubmitting(false);
-      setReviewName("");
-      setReviewRating(5);
-      setReviewComment("");
-      setShowReviewModal(false);
-      alert("Your review has been submitted and is pending approval!");
-    } catch (err) {
-      console.error(err);
-      setToastMessage("Failed to submit review.");
-    } finally {
-      setReviewSubmitting(false);
-    }
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -490,7 +458,7 @@ export default function ProductDetailPage() {
                                       : 'text-[#0D3C6A]/80 hover:bg-[#FAF6F0]/50 hover:text-[#0D3C6A]'
                                   }`}
                                 >
-                                  {opt.label} - ₹{opt.price.toFixed(2)}
+                                  {opt.label} - ₹{opt.price.toFixed(2).replace(/\.00$/, "")}
                                 </button>
                               ))}
                             </div>
@@ -520,7 +488,7 @@ export default function ProductDetailPage() {
                                 }`}
                               >
                                 <span className="font-serif text-sm text-[#0D3C6A] font-bold mb-1">{pack.label}</span>
-                                <span className="text-[10px] text-[#00A896] font-bold tracking-widest">₹{pack.price.toFixed(2)}</span>
+                                <span className="text-[10px] text-[#00A896] font-bold tracking-widest">₹{pack.price.toFixed(2).replace(/\.00$/, "")}</span>
                               </button>
                             ))}
                           </div>
@@ -534,7 +502,7 @@ export default function ProductDetailPage() {
                   <div className="flex flex-col">
                     <span className="text-[9px] tracking-widest text-[#00A896] uppercase">Price</span>
                     <span className="font-serif text-2xl font-medium text-[#0D3C6A]">
-                      ₹{(selectedQuantity ? selectedQuantity.price : product.price).toFixed(2)}
+                      ₹{(selectedQuantity ? selectedQuantity.price : product.price).toFixed(2).replace(/\.00$/, "")}
                     </span>
                   </div>
                   <div className="text-right flex flex-col">
@@ -610,7 +578,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex justify-between items-baseline gap-2">
                       <h4 className="font-serif text-xs font-light text-[#0D3C6A] tracking-wide line-clamp-1">{item.name}</h4>
-                      <span className="font-serif text-xs text-[#0D3C6A] whitespace-nowrap">₹{item.price.toFixed(2)}</span>
+                      <span className="font-serif text-xs text-[#0D3C6A] whitespace-nowrap">₹{item.price.toFixed(2).replace(/\.00$/, "")}</span>
                     </div>
                   </div>
                 ))}
@@ -635,7 +603,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex justify-between items-baseline gap-2">
                       <h4 className="font-serif text-xs font-light text-[#0D3C6A] tracking-wide line-clamp-1">{item.name}</h4>
-                      <span className="font-serif text-xs text-[#0D3C6A] whitespace-nowrap">₹{item.price.toFixed(2)}</span>
+                      <span className="font-serif text-xs text-[#0D3C6A] whitespace-nowrap">₹{item.price.toFixed(2).replace(/\.00$/, "")}</span>
                     </div>
                   </div>
                 ))}
@@ -660,7 +628,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex justify-between items-baseline gap-2">
                       <h4 className="font-serif text-xs font-light text-[#0D3C6A] tracking-wide line-clamp-1">{item.name}</h4>
-                      <span className="font-serif text-xs text-[#0D3C6A] whitespace-nowrap">₹{item.price.toFixed(2)}</span>
+                      <span className="font-serif text-xs text-[#0D3C6A] whitespace-nowrap">₹{item.price.toFixed(2).replace(/\.00$/, "")}</span>
                     </div>
                   </div>
                 ))}
@@ -751,42 +719,6 @@ export default function ProductDetailPage() {
 
             </div>
           </section>
-        )}
-
-        {/* REVIEW MODAL */}
-        {showReviewModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setShowReviewModal(false)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-[#FAF6F0] text-[#00A896] hover:bg-[#0D3C6A] hover:text-white transition-colors">✕</button>
-              
-              <h3 className="font-serif text-xl text-[#0D3C6A] uppercase tracking-wider mb-6 border-b border-[#B0B7C3] pb-4">
-                Write a Review
-              </h3>
-              <form onSubmit={submitReview} className="space-y-4 text-left">
-                <div>
-                  <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Name</label>
-                  <input required type="text" value={reviewName} onChange={e => setReviewName(e.target.value)} className="w-full border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs bg-[#FAF6F0] focus:outline-none focus:border-[#5BA6D6]" placeholder="Your name" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Rating</label>
-                  <select value={reviewRating} onChange={e => setReviewRating(Number(e.target.value))} className="w-full border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs bg-[#FAF6F0] focus:outline-none focus:border-[#5BA6D6]">
-                    <option value="5">5 Stars - Excellent</option>
-                    <option value="4">4 Stars - Good</option>
-                    <option value="3">3 Stars - Average</option>
-                    <option value="2">2 Stars - Poor</option>
-                    <option value="1">1 Star - Terrible</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-[#0D3C6A] uppercase tracking-widest mb-1">Review</label>
-                  <textarea required value={reviewComment} onChange={e => setReviewComment(e.target.value)} rows={4} className="w-full border border-[#B0B7C3] rounded-xl px-4 py-3 text-xs bg-[#FAF6F0] focus:outline-none focus:border-[#5BA6D6]" placeholder="What did you think of this product?"></textarea>
-                </div>
-                <button disabled={reviewSubmitting} type="submit" className="w-full bg-[#0D3C6A] text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-black transition-colors disabled:opacity-50 mt-2">
-                  {reviewSubmitting ? "Submitting..." : "Submit Review"}
-                </button>
-              </form>
-            </div>
-          </div>
         )}
 
       </main>

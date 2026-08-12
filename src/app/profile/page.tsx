@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, onSnapshot, arrayUnion } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
@@ -97,10 +97,7 @@ export default function ProfilePage() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        await Promise.all([
-          fetchOrders(currentUser.uid),
-          fetchProfile(currentUser.uid)
-        ]);
+        await fetchProfile(currentUser.uid);
       } else {
         setLoadingOrders(false);
         setLoadingProfile(false);
@@ -110,23 +107,28 @@ export default function ProfilePage() {
     return () => unsubscribe();
   }, []);
 
-  const fetchOrders = async (userId: string) => {
-    setLoadingOrders(true);
-    try {
-      const q = query(collection(db, "orders"), where("userId", "==", userId));
-      const querySnapshot = await getDocs(q);
-      const ordersList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      ordersList.sort((a: any, b: any) => {
-        if (!a.createdAt || !b.createdAt) return 0;
-        return b.createdAt.toMillis() - a.createdAt.toMillis();
+  useEffect(() => {
+    let unsubOrders: any = null;
+    if (user) {
+      setLoadingOrders(true);
+      const q = query(collection(db, "orders"), where("userId", "==", user.uid));
+      unsubOrders = onSnapshot(q, (snap) => {
+        const ordersList = snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        ordersList.sort((a: any, b: any) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return b.createdAt.toMillis() - a.createdAt.toMillis();
+        });
+        setOrders(ordersList);
+        setLoadingOrders(false);
+      }, (error) => {
+        console.error("Error listening to orders:", error);
+        setLoadingOrders(false);
       });
-      setOrders(ordersList);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoadingOrders(false);
     }
-  };
+    return () => {
+      if (unsubOrders) unsubOrders();
+    };
+  }, [user]);
 
   const fetchProfile = async (userId: string) => {
     setLoadingProfile(true);
@@ -184,10 +186,20 @@ export default function ProfilePage() {
 
   const handleReturnOrder = async (orderId: string) => {
     if (confirm("Are you sure you want to return this order?")) {
+      const reason = window.prompt("Please provide a mandatory reason for returning this order:");
+      if (!reason || reason.trim() === "") {
+        alert("A reason for the return is mandatory. Return request cancelled.");
+        return;
+      }
+
       try {
         const orderRef = doc(db, "orders", orderId);
-        await setDoc(orderRef, { status: "Return Requested" }, { merge: true });
-        setOrders(orders.map(o => o.orderId === orderId ? { ...o, status: "Return Requested" } : o));
+        await setDoc(orderRef, { 
+          status: "Return Requested", 
+          returnReason: reason.trim(),
+          statusTimeline: arrayUnion({ status: "Return Requested", timestamp: new Date().toISOString() })
+        }, { merge: true });
+        setOrders(orders.map(o => o.orderId === orderId ? { ...o, status: "Return Requested", returnReason: reason.trim() } : o));
       } catch (error) {
         console.error("Error returning order:", error);
         alert("There was an error processing your return. Please try again.");
@@ -230,7 +242,7 @@ export default function ProfilePage() {
     return (
       <div className="space-y-6">
         {orders.map((order) => (
-          <div key={order.orderId} className="bg-white border border-[#B0B7C3] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row">
+          <div key={order.orderId} onClick={() => router.push(`/orders/${order.orderId}`)} className="bg-white border border-[#B0B7C3] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row cursor-pointer">
             {/* Images side */}
             <div className="bg-[#FAF6F0] p-6 sm:w-1/3 border-b sm:border-b-0 sm:border-r border-[#B0B7C3] flex items-center justify-center relative">
               {order.items && order.items.length > 0 && (
@@ -280,7 +292,7 @@ export default function ProfilePage() {
                   const liveProduct = products.find(p => p.id === i.productId || p.id === i.id);
                   return liveProduct?.returnPolicyAvailable === true;
                 }) && (
-                    <button onClick={() => handleReturnOrder(order.orderId)} className="text-xs font-bold text-red-600 uppercase tracking-widest hover:bg-red-50 transition-colors flex items-center gap-1 border border-red-600 px-4 py-2 rounded-full">
+                    <button onClick={(e) => { e.stopPropagation(); handleReturnOrder(order.orderId); }} className="text-xs font-bold text-red-600 uppercase tracking-widest hover:bg-red-50 transition-colors flex items-center gap-1 border border-red-600 px-4 py-2 rounded-full">
                       Return Order
                     </button>
                   )}
@@ -431,7 +443,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-[#0D3C6A] uppercase tracking-wider">{item.product.name}</h3>
-                  <p className="text-[10px] text-[#00A896]">₹{item.product.price.toFixed(2)}</p>
+                  <p className="text-[10px] text-[#00A896]">₹{item.product.price.toFixed(2).replace(/\.00$/, "")}</p>
                 </div>
               </div>
 

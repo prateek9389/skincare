@@ -99,7 +99,7 @@ export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansion
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2).replace(/\.00$/, "")}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider hidden sm:block">Premium</span>
                     {onAddToCart && (
@@ -147,7 +147,7 @@ export default function FullscreenExpansion({ onAddToCart }: FullscreenExpansion
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-white">₹{product.price.toFixed(2).replace(/\.00$/, "")}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] font-bold text-[#00A896] uppercase tracking-wider hidden sm:block">Premium</span>
                     {onAddToCart && (

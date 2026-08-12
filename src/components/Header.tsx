@@ -313,7 +313,7 @@ export default function Header({
                           <div>
                             <span className="text-[10px] uppercase tracking-widest text-[#00A896] font-bold block">{product.category}</span>
                             <h4 className="text-sm font-semibold text-[#0D3C6A] leading-tight mt-0.5">{product.name}</h4>
-                            <span className="text-xs font-bold text-[#0D3C6A] mt-1 block">₹{product.price.toFixed(2)}</span>
+                            <span className="text-xs font-bold text-[#0D3C6A] mt-1 block">₹{product.price.toFixed(2).replace(/\.00$/, "")}</span>
                           </div>
                         </Link>
                       ))}
@@ -423,7 +423,7 @@ export default function Header({
                 <div className="bg-[#FAF6F0] rounded-xl p-4 text-center border border-[#B0B7C3] mt-2">
                   {amountRemaining > 0 ? (
                     <p className="text-xs text-[#0D3C6A] font-medium tracking-wide">
-                      You're <span className="font-bold text-[#00A896]">₹{amountRemaining.toFixed(2)}</span> away from FREE Delivery!
+                      You're <span className="font-bold text-[#00A896]">₹{amountRemaining.toFixed(2).replace(/\.00$/, "")}</span> away from FREE Delivery!
                     </p>
                   ) : (
                     <p className="text-xs text-[#00A896] font-bold tracking-wide">
@@ -471,7 +471,7 @@ export default function Header({
                         <div>
                           <div className="flex justify-between text-xs font-semibold text-[#0D3C6A] tracking-wider uppercase">
                             <h3>{item.product.name}</h3>
-                            <p className="ml-4">₹{(item.product.price * item.quantity).toFixed(2)}</p>
+                            <p className="ml-4">₹{(item.product.price * item.quantity).toFixed(2).replace(/\.00$/, "")}</p>
                           </div>
                           <p className="mt-1 text-[11px] text-[#00A896] line-clamp-1">{item.product.description}</p>
                         </div>
@@ -514,7 +514,7 @@ export default function Header({
                 <div className="border-t border-[#B0B7C3] py-6 px-6 bg-[#FFFFFF]">
                   <div className="flex justify-between text-xs font-semibold text-[#0D3C6A] uppercase tracking-wider mb-2">
                     <p>Subtotal</p>
-                    <p>₹{subtotal.toFixed(2)}</p>
+                    <p>₹{subtotal.toFixed(2).replace(/\.00$/, "")}</p>
                   </div>
                   <p className="text-[10px] text-[#00A896] mb-6">Shipping & taxes calculated at checkout.</p>
                   <button

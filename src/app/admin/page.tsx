@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Product, PRODUCTS } from "@/data/products";
 import { motion, AnimatePresence } from "framer-motion";
+import Fuse from "fuse.js";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, User, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion } from "firebase/firestore";
 import ProductManager from "./ProductManager";
 import CategoryManager from "./CategoryManager";
 import HeroManager from "./HeroManager";
@@ -60,6 +61,8 @@ const Globe = ({ className = IconProps }: { className?: string }) => <SvgIcon cl
 const Shield = ({ className = IconProps }: { className?: string }) => <SvgIcon className={className} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
 const Zap = ({ className = IconProps }: { className?: string }) => <SvgIcon className={className} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />;
 const Award = ({ className = IconProps }: { className?: string }) => <SvgIcon className={className} d="M12 15a7 7 0 100-14 7 7 0 000 14zM8.21 13.89L7 23l5-3 5 3-1.21-9.12" />;
+const Menu = ({ className = IconProps }: { className?: string }) => <SvgIcon className={className} d="M4 6h16M4 12h16M4 18h16" />;
+const X = ({ className = IconProps }: { className?: string }) => <SvgIcon className={className} d="M6 18L18 6M6 6l12 12" />;
 
 // ============================================================
 // Types
@@ -72,6 +75,7 @@ interface OrderItem {
   quantity: number;
   image: string;
   returnStatus?: "Return Requested" | "Return Approved" | "Return Rejected";
+  returnReason?: string;
 }
 
 interface OrderDetails {
@@ -81,9 +85,14 @@ interface OrderDetails {
   items: OrderItem[];
   shippingAddress: string;
   status: string;
+  statusTimeline?: { status: string; timestamp: string }[];
+  couponCode?: string | null;
+  discountAmount?: number;
   customerName?: string;
   phone?: string;
   createdAt?: any;
+  readByAdmin?: boolean;
+  returnReason?: string;
 }
 
 type SectionType =
@@ -141,6 +150,8 @@ const Pill = ({ children, tone = "neutral" }: { children: React.ReactNode; tone?
 
 export default function AdminPanel() {
   const [activeSection, setActiveSection] = useState<SectionType>("Dashboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [orders, setOrders] = useState<OrderDetails[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [productList, setProductList] = useState<Product[]>(PRODUCTS);
@@ -176,7 +187,14 @@ export default function AdminPanel() {
       if (!o) return;
       const newItems = [...o.items];
       newItems[itemIdx] = { ...newItems[itemIdx], returnStatus: newStatus as any };
-      await setDoc(doc(db, "orders", orderId), { items: newItems }, { merge: true });
+      
+      const timelineEventMsg = `${newStatus} (${newItems[itemIdx].name})`;
+      
+      await setDoc(doc(db, "orders", orderId), { 
+        items: newItems,
+        statusTimeline: arrayUnion({ status: timelineEventMsg, timestamp: new Date().toISOString() })
+      }, { merge: true });
+      
       if (selectedOrder?.orderId === orderId) {
         setSelectedOrder({ ...selectedOrder, items: newItems });
       }
@@ -295,6 +313,7 @@ export default function AdminPanel() {
   const [productView, setProductView] = useState<"grid" | "list">("grid");
   const updatingOrdersRef = useRef<Set<string>>(new Set());
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [showAllOrders, setShowAllOrders] = useState(false);
 
   // Load data from Firestore
   useEffect(() => {
@@ -390,7 +409,10 @@ export default function AdminPanel() {
         return;
       }
 
-      await setDoc(orderRef, { status: newStatus }, { merge: true });
+      await setDoc(orderRef, { 
+        status: newStatus,
+        statusTimeline: arrayUnion({ status: newStatus, timestamp: new Date().toISOString() })
+      }, { merge: true });
 
       if (newStatus === "Delivered") {
         const order = orders.find((o) => o.orderId === orderId);
@@ -577,10 +599,82 @@ export default function AdminPanel() {
     }).sort((a, b) => b.ltv - a.ltv);
   }, [orders]);
 
+  const filteredOrders = useMemo(() => {
+    let filtered = orders;
+    if (orderFilter !== "All") {
+      filtered = filtered.filter(o => o.status === orderFilter);
+    }
+    if (globalSearchQuery) {
+      const fuse = new Fuse(filtered, { keys: ["orderId", "customerName", "email"], threshold: 0.3 });
+      filtered = fuse.search(globalSearchQuery).map(res => res.item);
+    }
+    return filtered;
+  }, [orders, orderFilter, globalSearchQuery]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!globalSearchQuery) return customersList;
+    const fuse = new Fuse(customersList, { keys: ["email", "name"], threshold: 0.3 });
+    return fuse.search(globalSearchQuery).map(res => res.item);
+  }, [customersList, globalSearchQuery]);
+
+  // Generate Notifications
+  const notifications = useMemo(() => {
+    const notifs: any[] = [];
+    
+    // New Orders
+    orders.filter(o => o.status === "Processing").forEach(o => {
+      notifs.push({ 
+        id: `order_${o.orderId}`, 
+        title: "New Order", 
+        message: `Order ${o.orderId} is waiting to be shipped.`, 
+        type: "order",
+        data: o
+      });
+    });
+    
+    // Return Requests
+    orders.filter(o => o.status === "Return Requested" || (o.items && o.items.some(i => i.returnStatus === "Return Requested"))).forEach(o => {
+      notifs.push({ 
+        id: `return_${o.orderId}`, 
+        title: "Return Request", 
+        message: `Return requested for order ${o.orderId}.`, 
+        type: "return",
+        data: o
+      });
+    });
+    
+    // Pending Reviews
+    reviews.filter(r => r.status === "Pending").forEach(r => {
+      notifs.push({ 
+        id: `review_${r.id}`, 
+        title: "Pending Review", 
+        message: `New review by ${r.userName || 'a customer'} needs approval.`, 
+        type: "review" 
+      });
+    });
+    
+    return notifs;
+  }, [orders, reviews]);
+
+  const handleNotificationClick = (notif: any) => {
+    setShowNotifications(false);
+    
+    if (notif.type === "order" || notif.type === "return") {
+      setActiveSection("Orders");
+      setSelectedOrder(notif.data);
+      if (notif.type === "return") {
+        setOrderFilter("Return Requested");
+      }
+    } else if (notif.type === "review") {
+      setActiveSection("Reviews");
+      setReviewFilter("Pending");
+    }
+  };
+
   const totalCustomersCalculated = customersList.length;
   const newThisMonthCalculated = customersList.filter(c => c.isNew).length;
   const goldMembersCalculated = customersList.filter(c => c.tier === "Gold Member").length;
-  const avgLtvCalculated = customersList.length > 0 ? (customersList.reduce((acc, c) => acc + c.ltv, 0) / customersList.length).toFixed(2) : "0.00";
+  const avgLtvCalculated = customersList.length > 0 ? (customersList.reduce((acc, c) => acc + c.ltv, 0) / customersList.length).toFixed(2).replace(/\.00$/, "") : "0.00";
 
   const monthlyTargetAmount = adminStats.monthlyTarget || 100000;
   const calculatedMonthlyTargetPct = useMemo(() => {
@@ -777,20 +871,47 @@ export default function AdminPanel() {
     );
   }
 
+  const hasNewOrders = orders.some(o => {
+    const orderTime = o.createdAt?.toMillis ? o.createdAt.toMillis() : new Date(o.date).getTime();
+    return o.status === "Processing" && !o.readByAdmin && (Date.now() - orderTime) < 24 * 60 * 60 * 1000;
+  });
+
+  const handleOrderClick = async (o: any) => {
+    setSelectedOrder(o);
+    if (o.status === "Processing" && !o.readByAdmin) {
+      try {
+        await updateDoc(doc(db, "orders", o.id || o.orderId), { readByAdmin: true });
+      } catch (err) {
+        console.error("Failed to mark order as read", err);
+      }
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#FFFFFF] text-[#0D3C6A] overflow-hidden font-sans selection:bg-[#5BA6D6] selection:text-[#0D3C6A]">
 
       {/* ============================================================ */}
       {/* 1. LEFT SIDEBAR PANEL */}
       {/* ============================================================ */}
-      <aside className="w-64 shrink-0 bg-white border-r border-[#B0B7C3] flex flex-col justify-between p-6">
+      
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
+      <aside className={`fixed md:static inset-y-0 left-0 w-64 shrink-0 bg-white border-r border-[#B0B7C3] flex flex-col justify-between p-6 z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#BCAE9E] to-[#5BA6D6] flex items-center justify-center font-serif text-[#0D3C6A] font-bold text-sm">G</div>
-            <div className="text-left flex-1">
-              <h2 className="font-serif text-sm font-bold tracking-widest uppercase text-[#0D3C6A] leading-none">GUNA LIFE</h2>
-              <span className="text-[9px] text-[#00A896] uppercase tracking-widest font-semibold block mt-0.5">Control Center</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#BCAE9E] to-[#5BA6D6] flex items-center justify-center font-serif text-[#0D3C6A] font-bold text-sm">G</div>
+              <div className="text-left flex-1">
+                <h2 className="font-serif text-sm font-bold tracking-widest uppercase text-[#0D3C6A] leading-none">GUNA LIFE</h2>
+                <span className="text-[9px] text-[#00A896] uppercase tracking-widest font-semibold block mt-0.5">Control Center</span>
+              </div>
             </div>
+            <button className="md:hidden text-[#00A896] p-1" onClick={() => setIsSidebarOpen(false)}>
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           <nav className="space-y-1">
@@ -812,39 +933,35 @@ export default function AdminPanel() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveSection(item.id as SectionType)}
-                  className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all ${isSelected
+                  onClick={() => {
+                    setActiveSection(item.id as SectionType);
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all ${isSelected
                     ? "bg-[#FAF6F0] text-[#0D3C6A] border-l-2 border-[#BCAE9E] shadow-sm"
                     : "text-[#00A896] hover:text-[#0D3C6A] hover:bg-[#FAF6F0]/50"
                     }`}
                 >
-                  <Icon className={`w-4 h-4 ${isSelected ? "text-[#BCAE9E]" : "text-[#00A896]"}`} />
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-3.5">
+                    <Icon className={`w-4 h-4 ${isSelected ? "text-[#BCAE9E]" : "text-[#00A896]"}`} />
+                    {item.label}
+                  </div>
+                  {item.id === "Orders" && hasNewOrders && (
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  )}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Sidebar promo card + logout */}
+        {/* Sidebar bottom actions */}
         <div className="space-y-4">
-          <div className="rounded-2xl bg-gradient-to-br from-[#0D3C6A] to-[#3A362F] p-4 text-left overflow-hidden relative">
-            <Award className="w-5 h-5 text-[#5BA6D6] mb-2" />
-            <h4 className="text-[11px] font-serif font-semibold text-white uppercase tracking-wide leading-tight">Guna Life Pro</h4>
-            <p className="text-[9px] text-[#BCAE9E] mt-1 leading-relaxed">Unlock forecasting & AI restock alerts.</p>
-            <button className="mt-3 w-full text-[9px] font-bold uppercase tracking-widest bg-[#BCAE9E] text-[#0D3C6A] py-2 rounded-lg hover:opacity-90 transition-opacity">Upgrade</button>
-          </div>
           <div className="border-t border-[#B0B7C3] pt-4">
-            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-[#00A896] hover:bg-[#FAF6F0] hover:text-[#0D3C6A] mb-4">
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all bg-[#0D3C6A] text-white hover:bg-[#383838] shadow-sm">
               <LogOut className="w-4 h-4 shrink-0" />
               <span className="text-xs font-bold uppercase tracking-widest pt-0.5">Logout</span>
             </button>
-            <div className="flex items-center gap-3 bg-[#FAF6F0] p-3 rounded-2xl border border-[#B0B7C3]">
-              <Link href="/" className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-semibold tracking-wider uppercase text-[#00A896] hover:text-[#0D3C6A] hover:bg-[#FAF6F0]/50 transition-colors">
-                <LogOut className="w-4 h-4 text-[#00A896]" />
-                <span>Store Front</span>
-              </Link>
-            </div>
           </div>
         </div>
       </aside>
@@ -853,14 +970,19 @@ export default function AdminPanel() {
       {/* 2. MAIN SCROLLABLE CONTENT */}
       {/* ============================================================ */}
       <main className="flex-grow flex flex-col min-w-0 bg-[#F5F2EB] relative overflow-hidden">
-        <header className="h-20 border-b border-[#B0B7C3] flex items-center justify-between px-8 bg-white/80 backdrop-blur-md z-10">
-          <div className="text-left">
-            <h1 className="text-lg font-serif text-[#0D3C6A] font-medium uppercase tracking-wider">{activeSection}</h1>
-            <span className="text-[9px] text-[#00A896] uppercase tracking-wider block mt-0.5">Admin Management System</span>
+        <header className="h-20 border-b border-[#B0B7C3] flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md z-10">
+          <div className="flex items-center gap-4 text-left">
+            <button className="md:hidden p-2 -ml-2 text-[#00A896] hover:bg-[#FAF6F0] rounded-lg transition-colors" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="w-6 h-6" />
+            </button>
+            <div>
+              <h1 className="text-lg font-serif text-[#0D3C6A] font-medium uppercase tracking-wider">{activeSection}</h1>
+              <span className="text-[9px] text-[#00A896] uppercase tracking-wider block mt-0.5">Admin Management System</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 relative">
             <div className="relative hidden md:block">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#00A896]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#00A896] pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search resources..."
@@ -869,10 +991,48 @@ export default function AdminPanel() {
                 className="w-64 bg-[#FAF6F0] border border-[#B0B7C3] rounded-full pl-9 pr-4 py-2 text-xs text-[#0D3C6A] placeholder-[#00A896] focus:outline-none focus:border-[#BCAE9E]"
               />
             </div>
-            <button className="relative w-9 h-9 rounded-full bg-[#FAF6F0] border border-[#B0B7C3] flex items-center justify-center text-[#00A896] hover:text-[#0D3C6A] transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#BCAE9E] border border-white" />
-            </button>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative w-9 h-9 rounded-full bg-[#FAF6F0] border border-[#B0B7C3] flex items-center justify-center text-[#00A896] hover:text-[#0D3C6A] transition-colors"
+              >
+                <Bell className="w-4 h-4" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-white animate-pulse" />
+                )}
+              </button>
+              
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
+                  <div className="absolute right-0 top-12 w-72 bg-white border border-[#B0B7C3] rounded-2xl shadow-lg z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-[#B0B7C3] bg-[#FAF6F0]">
+                      <h3 className="font-serif text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">Notifications</h3>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        notifications.map(notif => (
+                          <div 
+                            key={notif.id} 
+                            onClick={() => handleNotificationClick(notif)}
+                            className="p-4 border-b border-[#B0B7C3]/50 hover:bg-[#FAF6F0] cursor-pointer transition-colors last:border-0"
+                          >
+                            <h4 className="text-xs font-bold text-[#0D3C6A] uppercase tracking-wider mb-1">{notif.title}</h4>
+                            <p className="text-[10px] text-[#6B7280] leading-relaxed">{notif.message}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center">
+                          <p className="text-xs text-[#6B7280]">No new notifications</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            
             <div className="flex items-center gap-3 border-l border-[#B0B7C3] pl-4">
               <div className="w-9 h-9 rounded-full bg-[#BCAE9E] flex items-center justify-center font-bold text-[#0D3C6A] text-xs">
                 A
@@ -916,7 +1076,7 @@ export default function AdminPanel() {
                   {/* Stats Cards Row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
-                      { label: "Total Revenue", value: `₹${totalRevenue.toFixed(2)}`, icon: DollarSign, change: "All time total" },
+                      { label: "Total Revenue", value: `₹${totalRevenue.toFixed(2).replace(/\.00$/, "")}`, icon: DollarSign, change: "All time total" },
                       { label: "Sales Orders", value: `${totalOrdersCount}`, icon: ShoppingBag, change: "All time total", onClick: () => setActiveSection("Orders") },
                       { label: "Active Customers", value: `${totalCustomersCalculated}`, icon: Users, change: `${newThisMonthCalculated} new this month`, onClick: () => setActiveSection("Customers") },
                       { label: "Monthly Target", value: `${calculatedMonthlyTargetPct}%`, icon: TrendingUp, change: `Goal: ₹${(monthlyTargetAmount / 1000).toFixed(0)}k`, onClick: () => { setTargetInputValue(monthlyTargetAmount.toString()); setIsTargetModalOpen(true); } },
@@ -1045,7 +1205,7 @@ export default function AdminPanel() {
                                   <td className="py-3 flex items-center gap-3"><div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] overflow-hidden shrink-0 border border-[#5BA6D6] p-0.5"><Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="32px" className="object-contain" /></div><span className="font-medium text-[#0D3C6A] line-clamp-1">{p.name}</span></td>
                                   <td className="py-3 uppercase text-[10px] tracking-wider text-[#00A896] font-medium">{p.category}</td>
                                   <td className="py-3"><Pill tone="green">In Stock</Pill></td>
-                                  <td className="py-3 font-semibold text-[#0D3C6A]">₹{p.price.toFixed(2)}</td>
+                                  <td className="py-3 font-semibold text-[#0D3C6A]">₹{p.price.toFixed(2).replace(/\.00$/, "")}</td>
                                 </tr>
                               );
                             })}
@@ -1057,9 +1217,9 @@ export default function AdminPanel() {
                       <h3 className="font-serif text-base text-[#0D3C6A] font-medium uppercase tracking-wider mb-6 border-b border-[#B0B7C3] pb-3">Recent Live Orders</h3>
                       <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-none pr-1">
                         {recentOrders.length > 0 ? recentOrders.map((o) => (
-                          <div key={o.orderId} onClick={() => setSelectedOrder(o)} className="flex justify-between items-center text-xs border-b border-[#B0B7C3]/50 pb-3 last:border-0 last:pb-0 cursor-pointer hover:bg-[#FAF6F0] p-2 -mx-2 rounded-xl transition-colors">
+                          <div key={o.orderId} onClick={() => handleOrderClick(o)} className="flex justify-between items-center text-xs border-b border-[#B0B7C3]/50 pb-3 last:border-0 last:pb-0 cursor-pointer hover:bg-[#FAF6F0] p-2 -mx-2 rounded-xl transition-colors">
                             <div className="space-y-0.5"><span className="font-bold text-[#0D3C6A] uppercase">{o.orderId}</span><span className="text-[10px] text-[#00A896] block uppercase tracking-wider">{o.date}</span></div>
-                            <div className="text-right space-y-1"><span className="font-semibold text-[#0D3C6A] block">₹{o.total.toFixed(2)}</span><span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span></div>
+                            <div className="text-right space-y-1"><span className="font-semibold text-[#0D3C6A] block">₹{o.total.toFixed(2).replace(/\.00$/, "")}</span><span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span></div>
                           </div>
                         )) : <div className="text-xs text-[#00A896] text-center mt-4">No recent orders found</div>}
                       </div>
@@ -1150,30 +1310,44 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="space-y-4">
-                    {orders
-                      .filter((o) => {
-                        if (orderFilter !== "All" && o.status !== orderFilter) return false;
-                        if (!globalSearchQuery) return true;
-                        const q = globalSearchQuery.toLowerCase();
-                        return o.orderId.toLowerCase().includes(q) || (o.customerName && o.customerName.toLowerCase().includes(q));
-                      })
-                      .map((o, idx) => (
-                        <motion.div key={o.orderId} onClick={() => setSelectedOrder(o)} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: idx * 0.05 }} className="bg-white border border-[#B0B7C3] rounded-2xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer">
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 border-b border-[#B0B7C3]/60">
+                    {(() => {
+                      const ordersToShow = showAllOrders ? filteredOrders : filteredOrders.slice(0, 5);
+                      const hiddenOrdersCount = filteredOrders.length - 5;
+                      return (
+                        <>
+                          {ordersToShow.map((o, idx) => {
+                      const orderTime = o.createdAt?.toMillis ? o.createdAt.toMillis() : new Date(o.date).getTime();
+                      const isNew = !o.readByAdmin && (Date.now() - orderTime) < 24 * 60 * 60 * 1000;
+                      return (
+                        <motion.div key={o.orderId} onClick={() => handleOrderClick(o)} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: idx * 0.05 }} className={`bg-white border ${isNew && o.status === "Processing" ? 'border-[#5BA6D6] shadow-sm' : 'border-[#B0B7C3]'} rounded-2xl overflow-hidden hover:shadow-sm transition-shadow cursor-pointer`}>
+                          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 border-b ${isNew && o.status === "Processing" ? 'border-[#5BA6D6]/30 bg-[#5BA6D6]/5' : 'border-[#B0B7C3]/60'}`}>
                             <div className="flex items-center gap-4">
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${o.status === "Delivered" ? "bg-green-50 text-green-600" : o.status === "Return Requested" ? "bg-orange-50 text-orange-600" : o.status === "Return Approved" ? "bg-purple-50 text-purple-600" : o.status === "Shipped" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"}`}>{o.status === "Delivered" ? <Package className="w-5 h-5" /> : o.status === "Shipped" ? <Truck className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}</div>
-                              <div className="text-left"><h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider">{o.orderId}</h4><span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} • ` : ""}{o.phone ? `${o.phone} • ` : ""}{o.date}</span></div>
+                              <div className="text-left">
+                                <h4 className="text-sm font-bold text-[#0D3C6A] uppercase tracking-wider flex items-center gap-2">
+                                  {o.orderId}
+                                </h4>
+                                <span className="text-[10px] text-[#00A896] uppercase tracking-wider block">{o.customerName ? `${o.customerName} • ` : ""}{o.phone ? `${o.phone} • ` : ""}{o.date}</span>
+                              </div>
                             </div>
                             <div className="flex items-center gap-3">
                               <span className={`inline-block text-[9px] font-bold uppercase px-3 py-1.5 rounded-full border ${o.status === "Delivered" ? "bg-green-50 text-green-600 border-green-200" : o.status === "Return Requested" ? "bg-orange-50 text-orange-600 border-orange-200" : o.status === "Return Approved" ? "bg-purple-50 text-purple-600 border-purple-200" : o.status === "Shipped" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-amber-50 text-amber-600 border-amber-200"}`}>{o.status}</span>
-                              <span className="text-lg font-bold text-[#0D3C6A]">₹{o.total.toFixed(2)}</span>
+                              <span className="text-lg font-bold text-[#0D3C6A]">₹{o.total.toFixed(2).replace(/\.00$/, "")}</span>
                             </div>
                           </div>
+                          
+                          {o.returnReason && (
+                            <div className="mx-5 mt-5 p-4 rounded-xl bg-orange-50 border border-orange-200 flex flex-col gap-1">
+                              <span className="text-[10px] font-bold text-orange-800 uppercase tracking-widest">Return Reason Provided</span>
+                              <p className="text-sm text-orange-900 italic">"{o.returnReason}"</p>
+                            </div>
+                          )}
+                          
                           <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div className="md:col-span-2">
                               <h5 className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold mb-3">Order Items</h5>
                               <div className="flex flex-wrap gap-3">
-                                {o.items.map((item, iIdx) => {
+                                {o.items.map((item: any, iIdx: number) => {
                                   const matchedProduct = PRODUCTS.find((pp) => pp.id === (item.productId || item.id));
                                   const imgSrc = matchedProduct ? matchedProduct.image : item.image;
                                   return (
@@ -1182,10 +1356,15 @@ export default function AdminPanel() {
                                         <div className="relative w-12 h-12 rounded-lg bg-white overflow-hidden shrink-0 border border-[#B0B7C3] p-0.5">{imgSrc && <Image data-pin-nopin="true" src={imgSrc} alt={item.name} fill sizes="48px" className="object-contain" />}</div>
                                         <div className="text-left flex-grow">
                                           <span className="text-xs font-semibold text-[#0D3C6A] block leading-tight">{item.name}</span>
-                                          <span className="text-[10px] text-[#00A896]">Qty: {item.quantity} • ₹{item.price.toFixed(2)}</span>
+                                          <span className="text-[10px] text-[#00A896]">Qty: {item.quantity} • ₹{item.price.toFixed(2).replace(/\.00$/, "")}</span>
                                           {item.returnStatus && (
                                             <div className="mt-1">
                                               <span className={`inline-block text-[8px] font-bold uppercase px-2 py-0.5 rounded-full border ${item.returnStatus === 'Return Requested' ? 'bg-amber-50 text-amber-600 border-amber-200' : item.returnStatus === 'Return Approved' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>{item.returnStatus}</span>
+                                              {item.returnReason && (
+                                                <p className="text-[9px] mt-1.5 text-[#0D3C6A]/80 italic leading-tight border-l-2 border-amber-200 pl-2 bg-amber-50/50 p-1 rounded-r">
+                                                  "{item.returnReason}"
+                                                </p>
+                                              )}
                                             </div>
                                           )}
                                         </div>
@@ -1214,14 +1393,28 @@ export default function AdminPanel() {
                             </div>
                           </div>
                         </motion.div>
-                      ))}
-                    {orders
-                      .filter((o) => {
-                        if (orderFilter !== "All" && o.status !== orderFilter) return false;
-                        if (!globalSearchQuery) return true;
-                        const q = globalSearchQuery.toLowerCase();
-                        return o.orderId.toLowerCase().includes(q) || (o.customerName && o.customerName.toLowerCase().includes(q));
-                      }).length === 0 && (<div className="bg-white border border-[#B0B7C3] rounded-2xl p-12 text-center"><ShoppingBag className="w-12 h-12 text-[#B0B7C3] mx-auto mb-4" /><h4 className="text-sm font-semibold text-[#0D3C6A] mb-1">No orders found</h4><p className="text-[11px] text-[#00A896]">{orderFilter === "All" ? "Orders placed on the storefront will appear here" : `No ${orderFilter.toLowerCase()} orders at this time`}</p></div>)}
+                      );
+                    })}
+                    
+                    {!showAllOrders && hiddenOrdersCount > 0 && (
+                      <div className="flex justify-center mt-6">
+                        <button onClick={() => setShowAllOrders(true)} className="px-6 py-3 bg-[#FAF6F0] border border-[#B0B7C3] text-[#0D3C6A] rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#EBE3D5] transition-colors">
+                          View All ({hiddenOrdersCount} more orders)
+                        </button>
+                      </div>
+                    )}
+                    {showAllOrders && hiddenOrdersCount > 0 && (
+                      <div className="flex justify-center mt-6">
+                        <button onClick={() => setShowAllOrders(false)} className="px-6 py-3 bg-[#FAF6F0] border border-[#B0B7C3] text-[#0D3C6A] rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#EBE3D5] transition-colors">
+                          Show Less
+                        </button>
+                      </div>
+                    )}
+                    
+                    </>
+                  );
+                })()}
+                {filteredOrders.length === 0 && (<div className="bg-white border border-[#B0B7C3] rounded-2xl p-12 text-center"><ShoppingBag className="w-12 h-12 text-[#B0B7C3] mx-auto mb-4" /><h4 className="text-sm font-semibold text-[#0D3C6A] mb-1">No orders found</h4><p className="text-[11px] text-[#00A896]">{orderFilter === "All" ? "Orders placed on the storefront will appear here" : `No ${orderFilter.toLowerCase()} orders at this time`}</p></div>)}
                   </div>
                 </div>
               )}
@@ -1240,7 +1433,7 @@ export default function AdminPanel() {
 
                   <SectionHeader title="Top Customers" subtitle="Highest lifetime value clients this quarter" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {customersList.slice(0, 6).map((c, idx) => (
+                    {filteredCustomers.slice(0, 6).map((c, idx) => (
                       <motion.div key={idx} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: idx * 0.05 }} className="bg-white border border-[#B0B7C3] rounded-2xl p-5 text-left hover:shadow-md hover:border-[#5BA6D6] transition-all">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
@@ -1252,7 +1445,7 @@ export default function AdminPanel() {
                         <div className="flex items-center gap-2 mt-4 text-[10px] text-[#00A896]"><Mail className="w-3 h-3 shrink-0" /><span className="truncate">{c.email}</span></div>
                         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#B0B7C3]/60">
                           <div><span className="text-[8px] uppercase tracking-widest text-[#00A896] font-bold block">Orders</span><span className="text-base font-bold text-[#0D3C6A]">{c.ordersCount}</span></div>
-                          <div><span className="text-[8px] uppercase tracking-widest text-[#00A896] font-bold block">Lifetime Value</span><span className="text-base font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(2)}</span></div>
+                          <div><span className="text-[8px] uppercase tracking-widest text-[#00A896] font-bold block">Lifetime Value</span><span className="text-base font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(2).replace(/\.00$/, "")}</span></div>
                         </div>
                         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#B0B7C3]/60">
                           <div className="relative w-8 h-8 rounded-lg bg-[#FAF6F0] border border-[#B0B7C3] p-0.5 overflow-hidden shrink-0">{c.fav && <Image data-pin-nopin="true" src={c.fav} alt="favourite" fill sizes="32px" className="object-contain" />}</div>
@@ -1269,12 +1462,12 @@ export default function AdminPanel() {
                       <table className="w-full text-left border-collapse">
                         <thead><tr className="border-b border-[#B0B7C3] text-[10px] uppercase tracking-wider text-[#00A896] font-semibold"><th className="pb-3">Customer</th><th className="pb-3">Email Address</th><th className="pb-3">Orders</th><th className="pb-3">Lifetime Value</th><th className="pb-3">Tier</th></tr></thead>
                         <tbody className="text-xs text-[#0D3C6A]/80 divide-y divide-[#B0B7C3]/60 font-light">
-                          {customersList.map((c, idx) => (
+                          {filteredCustomers.map((c, idx) => (
                             <tr key={idx} className="hover:bg-[#FAF6F0]/40 transition-colors">
                               <td className="py-4 font-semibold text-[#0D3C6A] flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#BCAE9E] flex items-center justify-center text-[10px] font-bold text-[#0D3C6A]">{c.name.split(" ").map((n: string) => n[0]).join("")}</div>{c.name}</td>
                               <td className="py-4 text-[#00A896] font-medium">{c.email}</td>
                               <td className="py-4">{c.ordersCount} Orders</td>
-                              <td className="py-4 font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(2)}</td>
+                              <td className="py-4 font-bold text-[#0D3C6A]">₹{c.ltv.toFixed(2).replace(/\.00$/, "")}</td>
                               <td className="py-4"><Pill tone={c.tone as any}>{c.tier}</Pill></td>
                             </tr>
                           ))}
@@ -1297,7 +1490,7 @@ export default function AdminPanel() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {[
                         { label: "Conversion Rate", value: `${calculatedConversionRate}%`, icon: TrendingUp, sub: "" },
-                        { label: "Avg. Order Value", value: `₹${typeof avgOrderValue === 'number' ? avgOrderValue.toFixed(2) : avgOrderValue}`, icon: DollarSign, sub: "" },
+                        { label: "Avg. Order Value", value: `₹${typeof avgOrderValue === 'number' ? avgOrderValue.toFixed(2).replace(/\.00$/, "") : avgOrderValue}`, icon: DollarSign, sub: "" },
                         { label: "Bounce Rate", value: `${calculatedBounceRate}%`, icon: Zap, sub: "" },
                         { label: "Return Rate", value: `${calculatedReturnRate}%`, icon: Package, sub: "" },
                       ].map((s) => { const SI = s.icon; return (<div key={s.label} className="bg-white border border-[#B0B7C3] rounded-2xl p-5 text-left"><div className="flex justify-between items-center mb-3"><span className="text-[9px] uppercase tracking-widest text-[#00A896] font-bold">{s.label}</span><div className="w-8 h-8 rounded-xl bg-[#FAF6F0] flex items-center justify-center text-[#BCAE9E]"><SI className="w-4 h-4" /></div></div><span className="text-2xl font-bold text-[#0D3C6A]">{s.value}</span>{s.sub && <span className="text-[10px] text-green-500 block mt-1 font-medium">{s.sub}</span>}</div>); })}
@@ -1314,7 +1507,7 @@ export default function AdminPanel() {
                             <div className="relative w-20 h-20 mb-3">{p.image && <Image data-pin-nopin="true" src={p.image} alt={p.name} fill sizes="80px" className="object-contain" />}</div>
                             <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold">#{i + 1}</span>
                             <h4 className="text-xs font-semibold text-[#0D3C6A] mt-1 leading-tight">{p.name}</h4>
-                            <span className="text-sm font-bold text-[#0D3C6A] mt-2">₹{p.revenue.toFixed(2)}</span>
+                            <span className="text-sm font-bold text-[#0D3C6A] mt-2">₹{p.revenue.toFixed(2).replace(/\.00$/, "")}</span>
                             <div className="w-full h-1 bg-[#B0B7C3] rounded-full overflow-hidden mt-2"><div className="h-full bg-[#BCAE9E]" style={{ width: `${p.pct}%` }} /></div>
                           </div>
                         ))}
@@ -1329,7 +1522,7 @@ export default function AdminPanel() {
                       </div>
                       <div className="space-y-4">
                         {topRegionsList.length > 0 ? topRegionsList.map((r) => (
-                          <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toFixed(2)} • {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
+                          <div key={r.region} className="space-y-1.5"><div className="flex justify-between text-xs font-semibold text-[#0D3C6A]/80 uppercase"><span>{r.region}</span><span className="text-[#00A896]">₹{r.revenue.toFixed(2).replace(/\.00$/, "")} • {r.pct}%</span></div><div className="w-full h-2 bg-[#FAF6F0] rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#5BA6D6] to-[#BCAE9E]" style={{ width: `${r.pct}%` }} /></div></div>
                         )) : (
                           <div className="text-xs text-[#0D3C6A]">No regional data available yet.</div>
                         )}
@@ -1366,12 +1559,12 @@ export default function AdminPanel() {
                       <h3 className="font-serif text-base text-[#0D3C6A] font-medium uppercase tracking-wider border-b border-[#B0B7C3] pb-3">All Coupons</h3>
                       <div className="overflow-x-auto scrollbar-none">
                         <table className="w-full text-left border-collapse">
-                          <thead><tr className="border-b border-[#B0B7C3] text-[10px] uppercase tracking-wider text-[#00A896] font-semibold"><th className="pb-3">Code</th><th className="pb-3">Discount</th><th className="pb-3">Applies To</th><th className="pb-3">Usages</th><th className="pb-3">Status</th><th className="pb-3">Actions</th></tr></thead>
+                          <thead><tr className="border-b border-[#B0B7C3] text-[10px] uppercase tracking-wider text-[#00A896] font-semibold"><th className="pb-3">Code</th><th className="pb-3">Discount</th><th className="pb-3">Applies To</th><th className="pb-3">Usages</th><th className="pb-3">Actions</th></tr></thead>
                           <tbody className="text-xs text-[#0D3C6A]/80 divide-y divide-[#B0B7C3]/60 font-light">
                             {coupons.map((c) => {
                               const prod = c.productId === "all" ? "All Products" : PRODUCTS.find(p => p.id === c.productId)?.name || "Unknown Product";
                               return (
-                                <tr key={c.code} className="hover:bg-[#FAF6F0]/40 transition-colors"><td className="py-4 font-bold text-[#0D3C6A] uppercase">{c.code}</td><td className="py-4 text-[#BCAE9E] font-medium">{c.discount}</td><td className="py-4 font-semibold">{prod}</td><td className="py-4">{c.usages} checkouts</td><td className="py-4"><Pill tone={c.status === "Active" ? "green" : "neutral"}>{c.status}</Pill></td><td className="py-4"><button onClick={() => handleToggleCoupon(c.code)} className="text-[9px] font-bold text-[#00A896] hover:text-[#0D3C6A] uppercase tracking-wider border border-[#5BA6D6] hover:border-neutral-700 px-3 py-1 rounded-xl transition-colors">{c.status === "Active" ? "Deactivate" : "Activate"}</button></td></tr>
+                                <tr key={c.code} className="hover:bg-[#FAF6F0]/40 transition-colors"><td className="py-4 font-bold text-[#0D3C6A] uppercase">{c.code}</td><td className="py-4 text-[#BCAE9E] font-medium">{c.discount}</td><td className="py-4 font-semibold">{prod}</td><td className="py-4">{c.usages} checkouts</td><td className="py-4"><button onClick={() => handleToggleCoupon(c.code)} className="text-[9px] font-bold text-[#00A896] hover:text-[#0D3C6A] uppercase tracking-wider border border-[#5BA6D6] hover:border-neutral-700 px-3 py-1 rounded-xl transition-colors">{c.status === "Active" ? "Deactivate" : "Activate"}</button></td></tr>
                               );
                             })}
                           </tbody>
@@ -1686,7 +1879,7 @@ export default function AdminPanel() {
                       <p className="text-xs font-bold text-[#0D3C6A] truncate">{item.name}</p>
                       <p className="text-[10px] text-[#00A896] uppercase tracking-widest">Qty: {item.quantity}</p>
                     </div>
-                    <span className="text-sm font-bold text-[#0D3C6A] shrink-0">₹{(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="text-sm font-bold text-[#0D3C6A] shrink-0">₹{(item.price * item.quantity).toFixed(2).replace(/\.00$/, "")}</span>
                   </div>
                 ))}
               </div>
@@ -1732,7 +1925,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="text-right w-full sm:w-auto bg-[#FAF6F0] p-4 rounded-xl border border-[#B0B7C3]">
                   <p className="text-[10px] text-[#00A896] uppercase tracking-widest font-bold mb-1">Grand Total</p>
-                  <p className="text-xl font-bold text-[#0D3C6A]">₹{selectedOrder.total.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-[#0D3C6A]">₹{selectedOrder.total.toFixed(2).replace(/\.00$/, "")}</p>
                 </div>
               </div>
             </div>

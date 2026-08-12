@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebase";
 import { collection, doc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import Fuse from "fuse.js";
 
 // Types
 export interface FirestoreProduct {
@@ -133,11 +134,11 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
 
   const categories = ["All", ...Array.from(new Set(products.map(p => p.category)))];
   const filteredByCategory = categoryFilter === "All" ? products : products.filter(p => p.category === categoryFilter);
-  const filteredProducts = filteredByCategory.filter(p => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
-  });
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery) return filteredByCategory;
+    const fuse = new Fuse(filteredByCategory, { keys: ["name", "description"], threshold: 0.3 });
+    return fuse.search(searchQuery).map(res => res.item);
+  }, [filteredByCategory, searchQuery]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -833,7 +834,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                 <span className="text-[9px] uppercase tracking-widest text-[#BCAE9E] font-bold block">{p.category}</span>
                 <h4 className="text-sm font-semibold text-[#0D3C6A] leading-tight line-clamp-1">{p.name}</h4>
                 <div className="mt-4 flex items-center justify-between">
-                  <span className="text-sm font-bold text-[#0D3C6A]">₹{p.price.toFixed(2)}</span>
+                  <span className="text-sm font-bold text-[#0D3C6A]">₹{p.price.toFixed(2).replace(/\.00$/, "")}</span>
                   <div className="flex flex-col items-end gap-1.5">
                     <span className="text-[9px] font-bold text-[#00A896] uppercase tracking-wider">{p.inventory || 0} units</span>
                     <span className="text-[8px] font-bold uppercase tracking-widest bg-[#F0FAED] text-green-700 px-2 py-1 rounded-full border border-[#D6EAD2]">Active</span>
@@ -881,7 +882,7 @@ export default function ProductManager({ searchQuery = "" }: { searchQuery?: str
                       </div>
                     </td>
                     <td className="p-4 text-xs text-[#00A896]">{prod.category}</td>
-                    <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price.toFixed(2)}</td>
+                    <td className="p-4 text-sm font-semibold text-[#0D3C6A]">₹{prod.price.toFixed(2).replace(/\.00$/, "")}</td>
                     <td className="p-4 text-xs font-bold text-[#0D3C6A]">{prod.inventory || 0} units</td>
                     <td className="p-4 pr-6 text-right space-x-3">
                       <button onClick={(e) => { e.stopPropagation(); toggleFeatured(prod); }} className={`text-xs font-bold ${prod.isFeatured ? "text-yellow-500 hover:text-yellow-600" : "text-[#BCAE9E] hover:text-[#0D3C6A]"} transition-colors uppercase tracking-widest`} title={prod.isFeatured ? "Remove from Featured" : "Mark as Featured"}>★</button>

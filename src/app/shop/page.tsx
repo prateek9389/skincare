@@ -663,7 +663,7 @@ export default function ShopPage() {
 
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-sm font-bold text-[#0D3C6A] whitespace-nowrap">
-                            ₹{product.price.toFixed(2)}
+                            ₹{product.price.toFixed(2).replace(/\.00$/, "")}
                           </span>
                           <button
                             onClick={() => handleAddToCart(product)}

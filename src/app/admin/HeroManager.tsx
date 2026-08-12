@@ -1,11 +1,12 @@
-﻿"use client";
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebase";
 import { collection, doc, setDoc, onSnapshot } from "firebase/firestore";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { FirestoreProduct } from "./ProductManager";
+import Fuse from "fuse.js";
 
 export default function HeroManager({ searchQuery = "" }: { searchQuery?: string }) {
   const [products, setProducts] = useState<FirestoreProduct[]>([]);
@@ -56,7 +57,13 @@ export default function HeroManager({ searchQuery = "" }: { searchQuery?: string
   };
 
   const featuredInActiveTab = products.filter(p => p.isFeatured && p.heroCategory === activeTab);
-  const availableToAdd = products.filter(p => !p.isFeatured && p.name.toLowerCase().includes(modalSearchQuery.toLowerCase()));
+  
+  const availableToAdd = useMemo(() => {
+    const unfeatured = products.filter(p => !p.isFeatured);
+    if (!modalSearchQuery) return unfeatured;
+    const fuse = new Fuse(unfeatured, { keys: ["name", "description"], threshold: 0.3 });
+    return fuse.search(modalSearchQuery).map(res => res.item);
+  }, [products, modalSearchQuery]);
 
   if (isLoading) {
     return <div className="p-8 text-sm text-[#00A896] uppercase tracking-widest animate-pulse">Loading hero settings...</div>;

@@ -175,7 +175,7 @@ const HorizontalProductCarousel = ({
 
                 <div className="flex items-center justify-between pt-2">
                   <span className={`text-xs sm:text-sm font-bold ${cardTextColor}`}>
-                    ₹{(selectedQuantities[product.id]?.price || (product.quantities && product.quantities.filter(q => !q.label.toLowerCase().includes("pack"))[0]?.price) || product.price).toFixed(2)}
+                    ₹{(selectedQuantities[product.id]?.price || (product.quantities && product.quantities.filter(q => !q.label.toLowerCase().includes("pack"))[0]?.price) || product.price).toFixed(2).replace(/\.00$/, "")}
                   </span>
                   
                   {/* Add Button */}

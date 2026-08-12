@@ -270,7 +270,7 @@ export default function BestSellersPage() {
                   </p>
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-sm font-bold text-[#0D3C6A]">
-                      ₹{product.price.toFixed(2)}
+                      ₹{product.price.toFixed(2).replace(/\.00$/, "")}
                     </span>
                     <button
                       onClick={() => handleAddToCart(product)}

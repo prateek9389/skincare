@@ -102,7 +102,7 @@ export default function ThankYouPage() {
                       <p className="text-[10px] text-[#00A896] uppercase tracking-wider">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2).replace(/\.00$/, "")}</span>
                 </div>
               ))}
             </div>
