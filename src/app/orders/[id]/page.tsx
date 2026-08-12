@@ -19,7 +19,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const [products, setProducts] = useState<any[]>([]);
   const [returnItemIdx, setReturnItemIdx] = useState<number | null>(null);
   const [returnReasonText, setReturnReasonText] = useState("");
-  const [returnReasonText, setReturnReasonText] = useState("");
   const [showTracking, setShowTracking] = useState(false);
 
   // Review state
